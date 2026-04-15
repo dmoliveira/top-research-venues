@@ -130,6 +130,8 @@ main, .hero, .footer, .narrow { max-width: 1240px; margin: 0 auto; padding: 24px
   flex-wrap: nowrap;
   white-space: nowrap;
   margin-left: 6px;
+  position: relative;
+  z-index: 3;
 }
 .topbar-search {
   grid-area: search;
@@ -137,8 +139,11 @@ main, .hero, .footer, .narrow { max-width: 1240px; margin: 0 auto; padding: 24px
   align-items: center;
   gap: 8px;
   min-width: 0;
-  width: min(100%, 360px);
+  width: min(100%, 300px);
   justify-self: end;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
 }
 .topbar-search input,
 .topbar-search select {
@@ -147,7 +152,7 @@ main, .hero, .footer, .narrow { max-width: 1240px; margin: 0 auto; padding: 24px
   padding: 9px 12px;
   border-radius: 999px;
 }
-.topbar-search input { flex: 1 1 180px; }
+.topbar-search input { flex: 1 1 150px; }
 .topbar-search select { width: 84px; flex: 0 0 84px; }
 .topbar-search button {
   border: 1px solid var(--line);
@@ -162,6 +167,7 @@ main, .hero, .footer, .narrow { max-width: 1240px; margin: 0 auto; padding: 24px
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 .topbar-search button:hover { background: var(--chip-strong); }
 .topbar-nav a, .theme-button, .page-button, .hero-nav a, .chip, .cta-link {
