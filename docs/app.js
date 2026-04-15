@@ -45,9 +45,11 @@ function applyTheme(theme) {
     ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
     : theme;
   root.dataset.theme = resolved;
-  document.querySelectorAll(".theme-button").forEach((button) => {
+  document.querySelectorAll(".theme-button[data-theme-option]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.themeOption === theme);
   });
+  const compact = document.querySelector("[data-theme-cycle]");
+  if (compact) compact.textContent = `Theme · ${theme.charAt(0).toUpperCase()}${theme.slice(1)}`;
 }
 
 function initTheme() {
@@ -60,6 +62,16 @@ function initTheme() {
       applyTheme(theme);
     });
   });
+  const compact = document.querySelector("[data-theme-cycle]");
+  if (compact) {
+    const order = ["auto", "light", "dark"];
+    compact.addEventListener("click", () => {
+      const current = localStorage.getItem(THEME_KEY) || "auto";
+      const next = order[(order.indexOf(current) + 1) % order.length];
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
+    });
+  }
 }
 
 function initCurrentNav() {
@@ -98,10 +110,10 @@ function initTopbarQuickSearch() {
   wrapper.className = "topbar-search";
   wrapper.innerHTML = `
     <select aria-label="Quick search target">
-      <option value="conferences.html">🏛</option>
-      <option value="journals.html">📚</option>
+      <option value="conferences.html">Conf</option>
+      <option value="journals.html">Jour</option>
       <option value="cfp.html">CFPs</option>
-      <option value="areas.html">Areas</option>
+      <option value="areas.html">Area</option>
     </select>
     <input type="search" placeholder="Quick search venues…" aria-label="Quick search input" />
     <button type="submit" aria-label="Run quick search">🔎</button>
@@ -786,10 +798,14 @@ function initCfpPage(cfps, conferences, journals, areas) {
   const confidence = document.getElementById("cfp-confidence");
   const count = document.getElementById("cfp-count");
   const summary = document.getElementById("cfp-summary");
+  const quickChips = document.getElementById("cfp-quick-chips");
   const pagerTop = document.getElementById("cfp-pagination-top");
   const pagerBottom = document.getElementById("cfp-pagination-bottom");
   let page = 1;
   let pageSize = 5;
+  let rangeDays = 0;
+  let confirmedOnly = false;
+  let quickType = "";
   const prefill = getPrefillQuery();
   if (prefill) search.value = prefill;
   area.innerHTML += areas.map((item) => `<option value="${item.slug}">${item.name}</option>`).join("");
@@ -806,9 +822,11 @@ function initCfpPage(cfps, conferences, journals, areas) {
     return cfps
       .filter((item) => (
         (!area.value || item.area_slug === area.value)
-        && (!type.value || item.venue_type === type.value)
+        && (!(quickType || type.value) || item.venue_type === (quickType || type.value))
         && (!status.value || item.status === status.value)
         && (!confidence.value || item.confidence === confidence.value)
+        && (!confirmedOnly || item.deadline_confidence === "confirmed")
+        && (!rangeDays || ((daysUntil(item.deadline) ?? 9999) >= 0 && (daysUntil(item.deadline) ?? 9999) <= rangeDays))
         && (!search.value || matchText(search.value, [
           item.track,
           item.notes || "",
@@ -844,6 +862,30 @@ function initCfpPage(cfps, conferences, journals, areas) {
 
   [search, area, type, status, confidence].forEach((element) => element.addEventListener("input", () => { page = 1; draw(); }));
   [area, type, status, confidence].forEach((element) => element.addEventListener("change", () => { page = 1; draw(); }));
+  quickChips?.querySelectorAll(".filter-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      if (chip.dataset.reset) {
+        rangeDays = 0;
+        confirmedOnly = false;
+        quickType = "";
+      } else if (chip.dataset.range) {
+        const next = Number(chip.dataset.range);
+        rangeDays = rangeDays === next ? 0 : next;
+      } else if (chip.dataset.confirmed) {
+        confirmedOnly = !confirmedOnly;
+      } else if (chip.dataset.type) {
+        quickType = quickType === chip.dataset.type ? "" : chip.dataset.type;
+      }
+      quickChips.querySelectorAll(".filter-chip").forEach((button) => {
+        const active = (!!button.dataset.range && Number(button.dataset.range) === rangeDays)
+          || (!!button.dataset.confirmed && confirmedOnly)
+          || (!!button.dataset.type && quickType === button.dataset.type);
+        button.classList.toggle("is-active", active);
+      });
+      page = 1;
+      draw();
+    });
+  });
   draw();
 }
 

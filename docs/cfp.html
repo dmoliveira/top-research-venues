@@ -23,7 +23,7 @@
       <nav class="topbar-nav">
         <a href="./conferences.html">Conferences</a><a href="./journals.html">Journals</a><a href="./areas.html">Areas</a><a href="./cfp.html">Deadlines</a><a href="./methodology.html">About</a><a href="./support.html">Support</a>
       </nav>
-      <div class="theme-toggle" role="group" aria-label="Theme selector"><button data-theme-option="auto" class="theme-button">Auto</button><button data-theme-option="light" class="theme-button">Light</button><button data-theme-option="dark" class="theme-button">Dark</button></div>
+      <div class="theme-toggle" role="group" aria-label="Theme selector"><button data-theme-cycle class="theme-button theme-button-compact">Theme · Auto</button></div>
     </div></div>
     <main>
       <section class="panel">
@@ -43,6 +43,15 @@
           <select id="cfp-confidence"><option value="">All confidence levels</option></select>
         </div>
         <p id="cfp-count" class="muted"></p>
+        <div class="chip-row" id="cfp-quick-chips">
+          <button type="button" class="chip filter-chip" data-range="30">Next 30d</button>
+          <button type="button" class="chip filter-chip" data-range="60">Next 60d</button>
+          <button type="button" class="chip filter-chip" data-range="90">Next 90d</button>
+          <button type="button" class="chip filter-chip" data-confirmed="true">Confirmed only</button>
+          <button type="button" class="chip filter-chip" data-type="Conference">Conferences only</button>
+          <button type="button" class="chip filter-chip" data-type="Journal">Journals only</button>
+          <button type="button" class="chip filter-chip" data-reset="true">Reset</button>
+        </div>
         <div id="cfp-pagination-top" class="pagination-bar"></div>
         <div class="table-wrap table-sticky">
           <table>
