@@ -547,7 +547,7 @@ tbody tr:first-child td { padding-top: 18px; }
 .dot-conference { background: #67e8f9; }
 .dot-journal { background: var(--accent2); }
 
-@media (max-width: 980px) {
+@media (max-width: 1180px) {
   .topbar { grid-template-columns: 1fr; justify-items: stretch; gap: 12px; }
   .topbar {
     grid-template-areas:
@@ -560,6 +560,9 @@ tbody tr:first-child td { padding-top: 18px; }
   .brand-group { flex-wrap: wrap; min-width: 0; }
   .topbar-search { justify-content: center; justify-self: center; width: 100%; }
   .theme-toggle { flex-wrap: wrap; white-space: normal; }
+}
+
+@media (max-width: 980px) {
   .hero { grid-template-columns: 1fr; min-height: auto; gap: 24px; padding-top: 28px; padding-bottom: 20px; }
   .section-head { flex-direction: column; align-items: stretch; }
   .controls, .split-grid { grid-template-columns: 1fr 1fr; }
