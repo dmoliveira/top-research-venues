@@ -1,4 +1,22 @@
 const THEME_KEY = "topresearch-theme";
+const COUNTRY_FLAGS = {
+  Austria: "🇦🇹",
+  Canada: "🇨🇦",
+  France: "🇫🇷",
+  Italy: "🇮🇹",
+  Mexico: "🇲🇽",
+  Singapore: "🇸🇬",
+  "United States": "🇺🇸"
+};
+const NAV_ICONS = {
+  "index.html": "🏠",
+  "conferences.html": "🏛",
+  "journals.html": "📚",
+  "areas.html": "🧭",
+  "cfp.html": "⏰",
+  "methodology.html": "🧪",
+  "support.html": "💖"
+};
 
 function syncTopbarOffset() {
   const topbar = document.querySelector(".topbar-shell");
@@ -40,6 +58,11 @@ function initCurrentNav() {
   document.querySelectorAll(".topbar-nav a").forEach((linkEl) => {
     const href = linkEl.getAttribute("href") || "";
     const target = href.split("/").pop() || "index.html";
+    const label = linkEl.textContent.trim();
+    if (!linkEl.dataset.decorated) {
+      linkEl.innerHTML = `${NAV_ICONS[target] || "•"} <span>${escapeHtml(label)}</span>`;
+      linkEl.dataset.decorated = "true";
+    }
     const isCurrent = target === current || (current === "" && target === "index.html");
     linkEl.classList.toggle("is-current", isCurrent);
     if (isCurrent) {
@@ -65,6 +88,21 @@ function safeUrl(value) {
 function link(label, url) {
   const href = safeUrl(url);
   return href ? `<a href="${href}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>` : "—";
+}
+
+function miniLink(label, url, icon = "↗") {
+  const href = safeUrl(url);
+  return href ? `<a class="mini-link" href="${href}" target="_blank" rel="noreferrer">${icon} ${escapeHtml(label)}</a>` : "";
+}
+
+function countryFlag(country) {
+  return COUNTRY_FLAGS[country] || "🌍";
+}
+
+function formatLocation(location, country) {
+  if (!location) return "TBA";
+  if (!country || location === "TBA") return escapeHtml(location);
+  return `${countryFlag(country)} ${escapeHtml(location)}`;
 }
 
 function tagList(items = []) {
@@ -110,6 +148,41 @@ function relativeDeadlineLabel(value) {
   return `in ${delta} days`;
 }
 
+function latestProceedings(item) {
+  return item.edition_log?.[0]?.proceedings_url || "";
+}
+
+function renderTrendCard(item) {
+  const logs = [...(item.edition_log || [])].sort((a, b) => a.year - b.year);
+  const withCounts = logs.filter((log) => typeof log.papers_published === "number");
+  if (!withCounts.length) return "";
+  const max = Math.max(...withCounts.map((log) => log.papers_published));
+  return `
+    <article class="trend-card stack-sm">
+      <div class="inline-meta">
+        <span class="badge">${escapeHtml(item.area)}</span>
+        <span class="badge">${escapeHtml(item.tier)}</span>
+      </div>
+      <h3>${link(item.short_name, item.website)}</h3>
+      <p class="muted">Recent paper volume by edition — a quick visual cue for scale and continuity.</p>
+      <div class="trend-chart">
+        ${withCounts.map((log) => `
+          <div class="trend-bar-group">
+            <div class="trend-value">${log.papers_published}</div>
+            <div class="trend-bar" style="height:${Math.max(24, Math.round((log.papers_published / max) * 120))}px"></div>
+            <div class="trend-label">${log.year}</div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="actions">
+        ${miniLink("Site", item.website, "🌐")}
+        ${miniLink("Submit", item.submission_url, "📝")}
+        ${miniLink("Proceedings", latestProceedings(item), "📄")}
+      </div>
+    </article>
+  `;
+}
+
 function venueMap(conferences, journals) {
   return new Map([...conferences.map((item) => [item.slug, { ...item, type: "conference" }]), ...journals.map((item) => [item.slug, { ...item, type: "journal" }])]);
 }
@@ -131,6 +204,7 @@ function renderMeta(meta) {
       <span class="badge">${meta.coverage.cfps} CFPs</span>
       <span class="badge">${meta.coverage.areas} areas</span>
     </div>
+    <p class="topbar-status">💡 Best experience: browse areas first, then compare deadlines, proceedings, and journals.</p>
   `;
 }
 
@@ -150,7 +224,13 @@ function renderFeatured(featured, confs, journals) {
         </div>
         <h3>${link(item.short_name || item.name, item.website)}</h3>
         <p class="muted">${escapeHtml(item.notes || "")}</p>
+        ${item.type === "conference" ? `<div class="meta-list"><div class="meta-row">📍 ${formatLocation(item.location, item.location_country)}</div><div class="meta-row">🗓 ${formatDate(item.event_date)}</div></div>` : `<div class="meta-list"><div class="meta-row">🏢 ${escapeHtml(item.publisher)}</div><div class="meta-row">📰 ${escapeHtml(item.latest_issue || "Latest issue TBA")}</div></div>`}
         <div>${tagList(item.subareas?.slice(0, 3) || item.tags || [])}</div>
+        <div class="actions">
+          ${miniLink("Site", item.website, "🌐")}
+          ${miniLink(item.type === "conference" ? "Submit" : "Author info", item.submission_url, item.type === "conference" ? "📝" : "✍️")}
+          ${item.type === "conference" ? miniLink("Proceedings", latestProceedings(item), "📄") : miniLink("Latest issue", item.issue_log?.[0]?.issue_url, "📰")}
+        </div>
       </article>
     `;
   }).join("");
@@ -170,8 +250,10 @@ function renderHomeDeadlines(cfps, venues) {
         <div class="inline-meta">${statusBadge(item.status)} <span class="badge">${escapeHtml(item.confidence)}</span></div>
         <h3>${escapeHtml(venue?.short_name || item.venue_slug)}</h3>
         <p class="muted">${escapeHtml(item.track)} · ${escapeHtml(venue?.area || "")}</p>
+        <div class="meta-row">📍 ${formatLocation(venue?.location, venue?.location_country)}</div>
         <p><strong>${formatDate(item.deadline)}</strong>${item.deadline ? ` · ${relativeDeadlineLabel(item.deadline)}` : ""}</p>
         <p class="muted">${escapeHtml(item.notes || "")}</p>
+        <div class="actions">${miniLink("Submit", item.submission_url, "📝")}${miniLink("Venue page", venue?.website, "🌐")}</div>
       </article>
     `;
   }).join("");
@@ -189,7 +271,7 @@ function renderHomeConferencePreview(conferences) {
       <td data-label="Conference">${link(item.short_name, item.website)}<div class="muted">${escapeHtml(item.name)}</div></td>
       <td data-label="Area">${escapeHtml(item.area)}</td>
       <td data-label="Deadline">${formatDate(item.next_deadline)}<div class="muted">${relativeDeadlineLabel(item.next_deadline)}</div></td>
-      <td data-label="Event">${formatDate(item.event_date)}</td>
+      <td data-label="Event">${formatDate(item.event_date)}<div class="muted">${formatLocation(item.location, item.location_country)}</div></td>
       <td data-label="Acceptance">${escapeHtml(item.acceptance_rate)}</td>
       <td data-label="Status">${statusBadge(item.status)}</td>
     </tr>
@@ -222,15 +304,20 @@ function renderLogs(conferences, journals) {
     confEl.innerHTML = conferences.slice(0, 3).map((item) => {
       const log = item.edition_log?.[0];
       if (!log) return "";
-      return `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)} ${log.year}</h3><p class="muted">${escapeHtml(log.location)} · ${escapeHtml(log.date_range)}</p><p>${escapeHtml(log.acceptance_rate)} acceptance</p><div>${tagList(log.highlights || [])}</div></article>`;
+      return `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)} ${log.year}</h3><p class="muted">${formatLocation(log.location, log.location_country)} · ${escapeHtml(log.date_range)}</p><p>${escapeHtml(log.acceptance_rate)} acceptance · ${log.papers_published ? `${log.papers_published} papers` : "paper count TBA"}</p><div>${tagList(log.highlights || [])}</div><div class="actions">${miniLink("Proceedings", log.proceedings_url, "📄")}${miniLink("Best paper", log.best_paper_url, "🏆")}</div></article>`;
     }).join("");
   }
   if (journalEl) {
     journalEl.innerHTML = journals.slice(0, 3).map((item) => {
       const log = item.issue_log?.[0];
       if (!log) return "";
-      return `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)}</h3><p class="muted">Vol. ${escapeHtml(log.volume)}${log.issue ? `, Issue ${escapeHtml(log.issue)}` : ""}</p><p>${formatDate(log.date)}</p><p class="muted">${escapeHtml(log.featured_articles?.[0]?.title || "")}</p></article>`;
+      return `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)}</h3><p class="muted">Vol. ${escapeHtml(log.volume)}${log.issue ? `, Issue ${escapeHtml(log.issue)}` : ""}</p><p>${formatDate(log.date)}</p><p class="muted">${escapeHtml(log.featured_articles?.[0]?.title || "")}</p><div class="actions">${miniLink("Issue", log.issue_url, "📰")}${miniLink("Article", log.featured_articles?.[0]?.url, "📄")}</div></article>`;
     }).join("");
+  }
+
+  const trendGrid = document.getElementById("trend-grid");
+  if (trendGrid) {
+    trendGrid.innerHTML = conferences.slice(0, 4).map(renderTrendCard).join("");
   }
 }
 
@@ -244,6 +331,7 @@ function initConferencePage(conferences) {
   const sort = document.getElementById("conference-sort");
   const count = document.getElementById("conference-count");
   const logGrid = document.getElementById("conference-log-grid");
+  const trendGrid = document.getElementById("conference-trend-grid");
   area.innerHTML += [...new Set(conferences.map((item) => item.area))].sort().map((value) => `<option value="${value}">${value}</option>`).join("");
   status.innerHTML += [...new Set(conferences.map((item) => item.status))].map((value) => `<option value="${value}">${value}</option>`).join("");
   tier.innerHTML += [...new Set(conferences.map((item) => item.tier))].sort(compareTier).map((value) => `<option value="${value}">${value}</option>`).join("");
@@ -268,18 +356,19 @@ function initConferencePage(conferences) {
         <td data-label="Tier">${escapeHtml(item.tier)}</td>
         <td data-label="Conference">${link(item.short_name, item.website)}<div class="muted">${escapeHtml(item.name)}</div></td>
         <td data-label="Area">${escapeHtml(item.area)}<div class="muted">${tagList(item.subareas || [])}</div></td>
-        <td data-label="Deadline">${formatDate(item.next_deadline)}</td>
-        <td data-label="Event">${formatDate(item.event_date)}<div class="muted">${escapeHtml(item.location)}</div></td>
+        <td data-label="Deadline">${formatDate(item.next_deadline)}<div class="muted">${relativeDeadlineLabel(item.next_deadline)}</div></td>
+        <td data-label="Event">${formatDate(item.event_date)}<div class="muted">${formatLocation(item.location, item.location_country)}</div></td>
         <td data-label="Frequency">${escapeHtml(item.frequency)}</td>
         <td data-label="Acceptance">${escapeHtml(item.acceptance_rate)}</td>
         <td data-label="Status">${statusBadge(item.status)}</td>
-        <td data-label="Links">${link("Site", item.website)} · ${link("Submit", item.submission_url)}</td>
+        <td data-label="Links">${link("Site", item.website)} · ${link("Submit", item.submission_url)} · ${link("Proceedings", latestProceedings(item))}</td>
       </tr>
     `).join("");
     logGrid.innerHTML = rows.slice(0, 6).map((item) => {
       const log = item.edition_log?.[0];
-      return log ? `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)} ${log.year}</h3><p class="muted">${escapeHtml(log.location)}</p><p>${escapeHtml(log.acceptance_rate)} acceptance</p><div>${tagList(log.highlights || [])}</div></article>` : "";
+      return log ? `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)} ${log.year}</h3><p class="muted">${formatLocation(log.location, log.location_country)}</p><p>${escapeHtml(log.acceptance_rate)} acceptance · ${log.papers_published ? `${log.papers_published} papers` : "paper count TBA"}</p><div>${tagList(log.highlights || [])}</div><div class="actions">${miniLink("Proceedings", log.proceedings_url, "📄")}</div></article>` : "";
     }).join("");
+    if (trendGrid) trendGrid.innerHTML = rows.slice(0, 6).map(renderTrendCard).join("");
   }
 
   [search, area, status, tier, sort].forEach((element) => element.addEventListener("input", draw));
@@ -327,12 +416,12 @@ function initJournalPage(journals) {
         <td data-label="Frequency">${escapeHtml(item.frequency)}</td>
         <td data-label="Review speed">${escapeHtml(item.review_speed)}</td>
         <td data-label="Latest issue">${escapeHtml(item.latest_issue)}<div class="muted">${formatDate(item.latest_publication_date)}</div></td>
-        <td data-label="Links">${link("Site", item.website)} · ${link("Submit", item.submission_url)}</td>
+        <td data-label="Links">${link("Site", item.website)} · ${link("Submit", item.submission_url)} · ${link("Issue", item.issue_log?.[0]?.issue_url)}</td>
       </tr>
     `).join("");
     logGrid.innerHTML = rows.slice(0, 6).map((item) => {
       const log = item.issue_log?.[0];
-      return log ? `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)}</h3><p class="muted">Vol. ${escapeHtml(log.volume)}${log.issue ? `, Issue ${escapeHtml(log.issue)}` : ""}</p><p>${formatDate(log.date)}</p><p class="muted">${escapeHtml(log.featured_articles?.[0]?.title || "")}</p></article>` : "";
+      return log ? `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)}</h3><p class="muted">Vol. ${escapeHtml(log.volume)}${log.issue ? `, Issue ${escapeHtml(log.issue)}` : ""}</p><p>${formatDate(log.date)}</p><p class="muted">${escapeHtml(log.featured_articles?.[0]?.title || "")}</p><div class="actions">${miniLink("Issue", log.issue_url, "📰")}${miniLink("Article", log.featured_articles?.[0]?.url, "📄")}</div></article>` : "";
     }).join("");
   }
 
@@ -359,7 +448,7 @@ function initCfpPage(cfps, conferences, journals, areas) {
   const nextDeadlines = cfps.filter((item) => item.deadline).sort((a, b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 3);
   summary.innerHTML = nextDeadlines.map((item) => {
     const venue = venues.get(item.venue_slug);
-    return `<article class="deadline-card stack-sm"><h3>${escapeHtml(venue?.short_name || item.venue_slug)}</h3><p>${formatDate(item.deadline)}</p><p class="muted">${escapeHtml(item.track)} · ${escapeHtml(item.confidence)}</p></article>`;
+    return `<article class="deadline-card stack-sm"><h3>${escapeHtml(venue?.short_name || item.venue_slug)}</h3><p>${formatDate(item.deadline)}${item.deadline ? ` · ${relativeDeadlineLabel(item.deadline)}` : ""}</p><p class="muted">${formatLocation(venue?.location, venue?.location_country)} · ${escapeHtml(item.track)} · ${escapeHtml(item.confidence)}</p><div class="actions">${miniLink("Submit", item.submission_url, "📝")}${miniLink("Venue", venue?.website, "🌐")}</div></article>`;
   }).join("");
 
   function currentData() {
@@ -385,11 +474,11 @@ function initCfpPage(cfps, conferences, journals, areas) {
     body.innerHTML = rows.map((item) => {
       const venue = venues.get(item.venue_slug);
       return `<tr>
-        <td data-label="Venue">${escapeHtml(venue?.short_name || item.venue_slug)}<div class="muted">${escapeHtml(venue?.area || "")}</div></td>
+        <td data-label="Venue">${escapeHtml(venue?.short_name || item.venue_slug)}<div class="muted">${escapeHtml(venue?.area || "")} · ${formatLocation(venue?.location, venue?.location_country)}</div></td>
         <td data-label="Type">${escapeHtml(item.venue_type)}</td>
         <td data-label="Track">${escapeHtml(item.track)}</td>
-        <td data-label="Deadline">${formatDate(item.deadline)}</td>
-        <td data-label="Notification">${escapeHtml(item.notification_date || "Rolling")}</td>
+        <td data-label="Deadline">${formatDate(item.deadline)}<div class="muted">${relativeDeadlineLabel(item.deadline)}</div></td>
+        <td data-label="Notification">${item.notification_date === "Rolling" ? "Rolling" : formatDate(item.notification_date)}</td>
         <td data-label="Status">${statusBadge(item.status)}</td>
         <td data-label="Confidence">${escapeHtml(item.confidence)}</td>
         <td data-label="Submission">${link("Submit", item.submission_url)}</td>
@@ -484,7 +573,7 @@ function initAreasPage(areas, conferences, journals, cfps) {
       summary.innerHTML = "No matching areas."; confBody.innerHTML = ""; journalBody.innerHTML = ""; relatedCfps.innerHTML = ""; return;
     }
     summary.innerHTML = `
-      <p class="eyebrow">Selected area</p>
+      <p class="eyebrow">✨ Selected area</p>
       <h3>${escapeHtml(currentArea.name)}</h3>
       <p class="muted">${escapeHtml(currentArea.description)}</p>
       <div>${tagList(currentArea.keywords || [])}</div>
@@ -493,7 +582,10 @@ function initAreasPage(areas, conferences, journals, cfps) {
     confBody.innerHTML = currentVenues.conferences.map((item) => `<tr><td data-label="Conference">${link(item.short_name, item.website)}</td><td data-label="Tier">${escapeHtml(item.tier)}</td><td data-label="Deadline">${formatDate(item.next_deadline)}</td><td data-label="Fit">${escapeHtml(item.area_strengths?.[currentArea.slug] || "adjacent")}</td><td data-label="Status">${statusBadge(item.status)}</td></tr>`).join("") || `<tr><td colspan="5">No conference matches.</td></tr>`;
     journalBody.innerHTML = currentVenues.journals.map((item) => `<tr><td data-label="Journal">${link(item.short_name, item.website)}</td><td data-label="Tier">${escapeHtml(item.tier)}</td><td data-label="Latest issue">${escapeHtml(item.latest_issue)}</td><td data-label="Fit">${escapeHtml(item.area_strengths?.[currentArea.slug] || "adjacent")}</td><td data-label="Review">${escapeHtml(item.review_speed)}</td></tr>`).join("") || `<tr><td colspan="5">No journal matches.</td></tr>`;
     const related = cfps.filter((item) => item.area_slug === currentArea.slug).slice(0, 4);
-    relatedCfps.innerHTML = related.length ? related.map((item) => `<p><strong>${escapeHtml(item.venue_slug)}</strong> · ${formatDate(item.deadline)} · ${escapeHtml(item.status)}</p>`).join("") : "<p>No immediate CFP entries tied to this area.</p>";
+    relatedCfps.innerHTML = related.length ? related.map((item) => {
+      const venue = venuesForArea(currentArea.slug).conferences.concat(venuesForArea(currentArea.slug).journals).find((venueItem) => venueItem.slug === item.venue_slug);
+      return `<p><strong>${escapeHtml(venue?.short_name || venue?.name || item.venue_slug)}</strong> · ${formatDate(item.deadline)} · ${relativeDeadlineLabel(item.deadline)} · ${escapeHtml(item.status)}</p>`;
+    }).join("") : "<p>No immediate CFP entries tied to this area.</p>";
   }
 
   [familySelect, typeSelect, search].forEach((element) => element.addEventListener("input", drawGraph));

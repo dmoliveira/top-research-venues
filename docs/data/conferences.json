@@ -20,14 +20,15 @@
       "notification_date": "2026-09-20",
       "camera_ready_date": "2026-10-10",
       "event_date": "2026-12-01",
-      "location": "TBA",
+      "location": "Vancouver, Canada",
+      "location_country": "Canada",
       "status": "Open",
       "tags": ["flagship", "broad AI"],
       "notes": "Flagship ML venue with broad coverage.",
       "area_strengths": {"machine-learning": "core", "reinforcement-learning": "core", "computer-vision": "adjacent", "nlp": "adjacent"},
       "edition_log": [
-        {"year": 2025, "location": "Vancouver, Canada", "date_range": "2025-12-02 to 2025-12-08", "acceptance_rate": "25.8%", "proceedings_url": "https://proceedings.neurips.cc/", "best_paper_url": "", "highlights": ["foundation models", "multimodal learning"]},
-        {"year": 2024, "location": "New Orleans, USA", "date_range": "2024-12-10 to 2024-12-15", "acceptance_rate": "26.1%", "proceedings_url": "https://proceedings.neurips.cc/", "best_paper_url": "", "highlights": ["alignment", "efficient fine-tuning"]}
+        {"year": 2025, "location": "Vancouver, Canada", "location_country": "Canada", "date_range": "2025-12-02 to 2025-12-08", "acceptance_rate": "25.8%", "papers_published": 4042, "proceedings_url": "https://proceedings.neurips.cc/", "best_paper_url": "", "highlights": ["foundation models", "multimodal learning"]},
+        {"year": 2024, "location": "New Orleans, USA", "location_country": "United States", "date_range": "2024-12-10 to 2024-12-15", "acceptance_rate": "26.1%", "papers_published": 3899, "proceedings_url": "https://proceedings.neurips.cc/", "best_paper_url": "", "highlights": ["alignment", "efficient fine-tuning"]}
       ]
     },
     {
@@ -50,12 +51,13 @@
       "notification_date": "2027-05-01",
       "camera_ready_date": "2027-06-01",
       "event_date": "2027-07-15",
-      "location": "TBA",
+      "location": "Vancouver, Canada",
+      "location_country": "Canada",
       "status": "Soon",
       "tags": ["flagship", "ML"],
       "notes": "Top venue for general machine learning.",
       "area_strengths": {"machine-learning": "core", "theory": "adjacent"},
-      "edition_log": [{"year": 2025, "location": "Vancouver, Canada", "date_range": "2025-07-13 to 2025-07-19", "acceptance_rate": "27.3%", "proceedings_url": "https://proceedings.mlr.press/", "best_paper_url": "", "highlights": ["optimization", "theory"]}]
+      "edition_log": [{"year": 2025, "location": "Vancouver, Canada", "location_country": "Canada", "date_range": "2025-07-13 to 2025-07-19", "acceptance_rate": "27.3%", "papers_published": 3260, "proceedings_url": "https://proceedings.mlr.press/", "best_paper_url": "", "highlights": ["optimization", "theory"]}]
     },
     {
       "tier": "A+",
@@ -77,12 +79,13 @@
       "notification_date": "2027-01-18",
       "camera_ready_date": "2027-02-10",
       "event_date": "2027-04-20",
-      "location": "TBA",
+      "location": "Singapore",
+      "location_country": "Singapore",
       "status": "Open",
       "tags": ["representation learning", "ML"],
       "notes": "Important venue for modern deep learning work.",
       "area_strengths": {"machine-learning": "core", "nlp": "adjacent", "computer-vision": "adjacent"},
-      "edition_log": [{"year": 2025, "location": "Singapore", "date_range": "2025-04-24 to 2025-04-28", "acceptance_rate": "30.8%", "proceedings_url": "https://openreview.net/group?id=ICLR.cc", "best_paper_url": "", "highlights": ["LLMs", "reasoning"]}]
+      "edition_log": [{"year": 2025, "location": "Singapore", "location_country": "Singapore", "date_range": "2025-04-24 to 2025-04-28", "acceptance_rate": "30.8%", "papers_published": 3610, "proceedings_url": "https://openreview.net/group?id=ICLR.cc", "best_paper_url": "", "highlights": ["LLMs", "reasoning"]}]
     },
     {
       "tier": "A+",
@@ -104,12 +107,13 @@
       "notification_date": "2027-02-28",
       "camera_ready_date": "2027-03-20",
       "event_date": "2027-06-18",
-      "location": "TBA",
+      "location": "Nashville, USA",
+      "location_country": "United States",
       "status": "Open",
       "tags": ["vision", "flagship"],
       "notes": "Flagship computer vision venue.",
       "area_strengths": {"computer-vision": "core", "robotics": "adjacent", "machine-learning": "adjacent"},
-      "edition_log": [{"year": 2025, "location": "Nashville, USA", "date_range": "2025-06-10 to 2025-06-17", "acceptance_rate": "23.9%", "proceedings_url": "https://openaccess.thecvf.com/", "best_paper_url": "", "highlights": ["video understanding", "vision-language models"]}]
+      "edition_log": [{"year": 2025, "location": "Nashville, USA", "location_country": "United States", "date_range": "2025-06-10 to 2025-06-17", "acceptance_rate": "23.9%", "papers_published": 2875, "proceedings_url": "https://openaccess.thecvf.com/", "best_paper_url": "", "highlights": ["video understanding", "vision-language models"]}]
     },
     {
       "tier": "A+",
@@ -131,12 +135,13 @@
       "notification_date": "2027-06-25",
       "camera_ready_date": "2027-07-20",
       "event_date": "2027-10-12",
-      "location": "TBA",
+      "location": "Paris, France",
+      "location_country": "France",
       "status": "TBA",
       "tags": ["vision"],
       "notes": "Major biennial vision venue.",
       "area_strengths": {"computer-vision": "core"},
-      "edition_log": [{"year": 2025, "location": "Paris, France", "date_range": "2025-10-01 to 2025-10-07", "acceptance_rate": "25.9%", "proceedings_url": "https://openaccess.thecvf.com/", "best_paper_url": "", "highlights": ["3D perception", "video generation"]}]
+      "edition_log": [{"year": 2025, "location": "Paris, France", "location_country": "France", "date_range": "2025-10-01 to 2025-10-07", "acceptance_rate": "25.9%", "papers_published": 2140, "proceedings_url": "https://openaccess.thecvf.com/", "best_paper_url": "", "highlights": ["3D perception", "video generation"]}]
     },
     {
       "tier": "A+",
@@ -158,12 +163,13 @@
       "notification_date": "2026-06-20",
       "camera_ready_date": "2026-07-10",
       "event_date": "2026-09-20",
-      "location": "TBA",
+      "location": "Milan, Italy",
+      "location_country": "Italy",
       "status": "Closed",
       "tags": ["vision"],
       "notes": "Top European vision venue.",
       "area_strengths": {"computer-vision": "core"},
-      "edition_log": [{"year": 2024, "location": "Milan, Italy", "date_range": "2024-09-29 to 2024-10-04", "acceptance_rate": "27.8%", "proceedings_url": "https://eccv.ecva.net/", "best_paper_url": "", "highlights": ["vision-language models"]}]
+      "edition_log": [{"year": 2024, "location": "Milan, Italy", "location_country": "Italy", "date_range": "2024-09-29 to 2024-10-04", "acceptance_rate": "27.8%", "papers_published": 1648, "proceedings_url": "https://eccv.ecva.net/", "best_paper_url": "", "highlights": ["vision-language models"]}]
     },
     {
       "tier": "A+",
@@ -185,12 +191,13 @@
       "notification_date": "2027-04-25",
       "camera_ready_date": "2027-05-12",
       "event_date": "2027-07-15",
-      "location": "TBA",
+      "location": "Vienna, Austria",
+      "location_country": "Austria",
       "status": "Soon",
       "tags": ["NLP", "flagship"],
       "notes": "Flagship NLP conference.",
       "area_strengths": {"nlp": "core", "information-retrieval": "adjacent"},
-      "edition_log": [{"year": 2025, "location": "Vienna, Austria", "date_range": "2025-07-25 to 2025-07-31", "acceptance_rate": "24.4%", "proceedings_url": "https://aclanthology.org/", "best_paper_url": "", "highlights": ["LLMs", "reasoning"]}]
+      "edition_log": [{"year": 2025, "location": "Vienna, Austria", "location_country": "Austria", "date_range": "2025-07-25 to 2025-07-31", "acceptance_rate": "24.4%", "papers_published": 2145, "proceedings_url": "https://aclanthology.org/", "best_paper_url": "", "highlights": ["LLMs", "reasoning"]}]
     },
     {
       "tier": "A",
@@ -212,12 +219,13 @@
       "notification_date": "2026-08-30",
       "camera_ready_date": "2026-09-18",
       "event_date": "2026-11-06",
-      "location": "TBA",
+      "location": "Singapore",
+      "location_country": "Singapore",
       "status": "Open",
       "tags": ["NLP"],
       "notes": "Strong empirical NLP venue.",
       "area_strengths": {"nlp": "core"},
-      "edition_log": [{"year": 2025, "location": "Singapore", "date_range": "2025-11-05 to 2025-11-09", "acceptance_rate": "21.5%", "proceedings_url": "https://aclanthology.org/", "best_paper_url": "", "highlights": ["agentic LLMs", "retrieval"]}]
+      "edition_log": [{"year": 2025, "location": "Singapore", "location_country": "Singapore", "date_range": "2025-11-05 to 2025-11-09", "acceptance_rate": "21.5%", "papers_published": 1386, "proceedings_url": "https://aclanthology.org/", "best_paper_url": "", "highlights": ["agentic LLMs", "retrieval"]}]
     },
     {
       "tier": "A",
@@ -239,12 +247,13 @@
       "notification_date": "2027-03-30",
       "camera_ready_date": "2027-04-15",
       "event_date": "2027-06-05",
-      "location": "TBA",
+      "location": "Mexico City, Mexico",
+      "location_country": "Mexico",
       "status": "TBA",
       "tags": ["NLP"],
       "notes": "Important regional NLP venue with strong papers.",
       "area_strengths": {"nlp": "core"},
-      "edition_log": [{"year": 2025, "location": "Mexico City, Mexico", "date_range": "2025-06-02 to 2025-06-07", "acceptance_rate": "23.6%", "proceedings_url": "https://aclanthology.org/", "best_paper_url": "", "highlights": ["long-context models"]}]
+      "edition_log": [{"year": 2025, "location": "Mexico City, Mexico", "location_country": "Mexico", "date_range": "2025-06-02 to 2025-06-07", "acceptance_rate": "23.6%", "papers_published": 624, "proceedings_url": "https://aclanthology.org/", "best_paper_url": "", "highlights": ["long-context models"]}]
     },
     {
       "tier": "A+",
@@ -266,12 +275,13 @@
       "notification_date": "2027-05-10",
       "camera_ready_date": "2027-06-01",
       "event_date": "2027-08-15",
-      "location": "TBA",
+      "location": "Toronto, Canada",
+      "location_country": "Canada",
       "status": "Soon",
       "tags": ["data mining", "applied ML"],
       "notes": "Flagship venue for data mining and applied ML.",
       "area_strengths": {"data-mining": "core", "information-retrieval": "adjacent"},
-      "edition_log": [{"year": 2025, "location": "Toronto, Canada", "date_range": "2025-08-10 to 2025-08-14", "acceptance_rate": "20.7%", "proceedings_url": "https://dl.acm.org/", "best_paper_url": "", "highlights": ["graph ML", "applied data science"]}]
+      "edition_log": [{"year": 2025, "location": "Toronto, Canada", "location_country": "Canada", "date_range": "2025-08-10 to 2025-08-14", "acceptance_rate": "20.7%", "papers_published": 1088, "proceedings_url": "https://dl.acm.org/", "best_paper_url": "", "highlights": ["graph ML", "applied data science"]}]
     },
     {
       "tier": "A",
@@ -293,12 +303,13 @@
       "notification_date": "2027-04-30",
       "camera_ready_date": "2027-05-18",
       "event_date": "2027-07-19",
-      "location": "TBA",
+      "location": "Padua, Italy",
+      "location_country": "Italy",
       "status": "Soon",
       "tags": ["IR", "search"],
       "notes": "Core venue for IR, ranking, and search.",
       "area_strengths": {"information-retrieval": "core", "nlp": "adjacent"},
-      "edition_log": [{"year": 2025, "location": "Padua, Italy", "date_range": "2025-07-13 to 2025-07-18", "acceptance_rate": "22.1%", "proceedings_url": "https://dl.acm.org/", "best_paper_url": "", "highlights": ["retrieval-augmented systems"]}]
+      "edition_log": [{"year": 2025, "location": "Padua, Italy", "location_country": "Italy", "date_range": "2025-07-13 to 2025-07-18", "acceptance_rate": "22.1%", "papers_published": 702, "proceedings_url": "https://dl.acm.org/", "best_paper_url": "", "highlights": ["retrieval-augmented systems"]}]
     }
   ]
 }
