@@ -80,21 +80,40 @@ main, .hero, .footer, .narrow { max-width: 1240px; margin: 0 auto; padding: 24px
   white-space: nowrap;
   font-weight: 500;
 }
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.home-link {
+  text-decoration: none;
+  border: 1px solid var(--line);
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--text);
+  font-weight: 600;
+  font-size: .9rem;
+  white-space: nowrap;
+}
+.home-link:hover {
+  background: var(--chip-strong);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
 .topbar-nav, .theme-toggle, .badge-row, .hero-nav, .stat-grid, .legend-row, .chip-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 .topbar-nav {
-  justify-content: center;
+  justify-content: flex-start;
   row-gap: 8px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  overflow-x: visible;
+  white-space: normal;
   padding-bottom: 2px;
 }
-.topbar-nav::-webkit-scrollbar { display: none; }
 .theme-toggle { justify-content: flex-end; }
 .topbar-nav a, .theme-button, .page-button, .hero-nav a, .chip, .cta-link {
   text-decoration: none;
@@ -315,7 +334,7 @@ tbody tr:first-child td { padding-top: 18px; }
 
 @media (max-width: 980px) {
   .topbar { grid-template-columns: 1fr; justify-items: stretch; gap: 12px; }
-  .topbar-nav, .theme-toggle { justify-content: center; }
+  .brand-group, .topbar-nav, .theme-toggle { justify-content: center; }
   .hero { grid-template-columns: 1fr; min-height: auto; gap: 24px; padding-top: 28px; padding-bottom: 20px; }
   .section-head { flex-direction: column; align-items: stretch; }
   .controls, .split-grid { grid-template-columns: 1fr 1fr; }
