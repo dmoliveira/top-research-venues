@@ -57,7 +57,7 @@ function applyTheme(theme) {
 function initTheme() {
   const saved = localStorage.getItem(THEME_KEY) || "auto";
   applyTheme(saved);
-  document.querySelectorAll(".theme-button").forEach((button) => {
+  document.querySelectorAll(".theme-button[data-theme-option]").forEach((button) => {
     button.addEventListener("click", () => {
       const theme = button.dataset.themeOption || "auto";
       localStorage.setItem(THEME_KEY, theme);
