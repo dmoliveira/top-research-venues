@@ -104,7 +104,7 @@ function initTopbarQuickSearch() {
       <option value="areas.html">Areas</option>
     </select>
     <input type="search" placeholder="Quick search venues…" aria-label="Quick search input" />
-    <button type="submit" aria-label="Run quick search">Go</button>
+    <button type="submit" aria-label="Run quick search">🔎</button>
   `;
   const select = wrapper.querySelector("select");
   const input = wrapper.querySelector("input");
