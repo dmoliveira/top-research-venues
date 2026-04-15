@@ -98,13 +98,13 @@ function initTopbarQuickSearch() {
   wrapper.className = "topbar-search";
   wrapper.innerHTML = `
     <select aria-label="Quick search target">
-      <option value="conferences.html">Conf</option>
-      <option value="journals.html">Jour</option>
+      <option value="conferences.html">🏛</option>
+      <option value="journals.html">📚</option>
       <option value="cfp.html">CFPs</option>
       <option value="areas.html">Areas</option>
     </select>
     <input type="search" placeholder="Quick search venues…" aria-label="Quick search input" />
-    <button type="submit" aria-label="Run quick search">🔎</button>
+    <button type="submit" aria-label="Run quick search">Go</button>
   `;
   const select = wrapper.querySelector("select");
   const input = wrapper.querySelector("input");
@@ -346,7 +346,7 @@ function renderHomeConferencePreview(conferences) {
   const body = document.getElementById("home-conference-body");
   const total = document.getElementById("overview-conference-total");
   if (!body) return;
-  if (total) total.textContent = `${conferences.length} total`;
+  if (total) total.textContent = `🏛 ${conferences.length} conferences tracked`;
   const previewRows = [...conferences]
     .sort((a, b) => compareTier(a.tier, b.tier) || new Date(a.next_deadline || "9999-12-31") - new Date(b.next_deadline || "9999-12-31"))
     .slice(0, 6);
@@ -367,7 +367,7 @@ function renderHomeJournalPreview(journals) {
   const body = document.getElementById("home-journal-body");
   const total = document.getElementById("overview-journal-total");
   if (!body) return;
-  if (total) total.textContent = `${journals.length} total`;
+  if (total) total.textContent = `📚 ${journals.length} journals tracked`;
   const previewRows = [...journals]
     .sort((a, b) => compareTier(a.tier, b.tier) || new Date(b.latest_publication_date || 0) - new Date(a.latest_publication_date || 0))
     .slice(0, 6);
@@ -426,7 +426,7 @@ function initConferencePage(conferences) {
   let pageSize = 5;
   const prefill = getPrefillQuery();
   if (prefill) search.value = prefill;
-  if (total) total.textContent = `${conferences.length} conferences tracked`;
+  if (total) total.textContent = `🏛 ${conferences.length} conferences tracked`;
   area.innerHTML += [...new Set(conferences.map((item) => item.area))].sort().map((value) => `<option value="${value}">${value}</option>`).join("");
   status.innerHTML += [...new Set(conferences.map((item) => item.status))].map((value) => `<option value="${value}">${value}</option>`).join("");
   tier.innerHTML += [...new Set(conferences.map((item) => item.tier))].sort(compareTier).map((value) => `<option value="${value}">${value}</option>`).join("");
@@ -448,7 +448,7 @@ function initConferencePage(conferences) {
     const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
     page = Math.min(page, totalPages);
     const pagedRows = rows.slice((page - 1) * pageSize, page * pageSize);
-    count.textContent = `${rows.length} conferences shown`;
+    count.textContent = `${rows.length} conferences match the current filters`;
     body.innerHTML = pagedRows.map((item) => `
       <tr>
         <td data-label="Tier">${escapeHtml(item.tier)}</td>
@@ -493,7 +493,7 @@ function initJournalPage(journals) {
   let pageSize = 5;
   const prefill = getPrefillQuery();
   if (prefill) search.value = prefill;
-  if (total) total.textContent = `${journals.length} journals tracked`;
+  if (total) total.textContent = `📚 ${journals.length} journals tracked`;
   area.innerHTML += [...new Set(journals.map((item) => item.area))].sort().map((value) => `<option value="${value}">${value}</option>`).join("");
   oa.innerHTML += [...new Set(journals.map((item) => item.oa_model))].map((value) => `<option value="${value}">${value}</option>`).join("");
   tier.innerHTML += [...new Set(journals.map((item) => item.tier))].sort(compareTier).map((value) => `<option value="${value}">${value}</option>`).join("");
@@ -516,7 +516,7 @@ function initJournalPage(journals) {
     const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
     page = Math.min(page, totalPages);
     const pagedRows = rows.slice((page - 1) * pageSize, page * pageSize);
-    count.textContent = `${rows.length} journals shown`;
+    count.textContent = `${rows.length} journals match the current filters`;
     body.innerHTML = pagedRows.map((item) => `
       <tr>
         <td data-label="Tier">${escapeHtml(item.tier)}</td>
@@ -592,7 +592,7 @@ function initCfpPage(cfps, conferences, journals, areas) {
     const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
     page = Math.min(page, totalPages);
     const pagedRows = rows.slice((page - 1) * pageSize, page * pageSize);
-    count.textContent = `${rows.length} CFPs shown`;
+    count.textContent = `${rows.length} CFPs match the current filters`;
     body.innerHTML = pagedRows.map((item) => {
       const venue = venues.get(item.venue_slug);
       return `<tr>
