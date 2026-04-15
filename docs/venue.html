@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Venue · Top Research Venues</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="topbar-shell"><div class="topbar">
+      <div class="brand-group">
+        <a class="author-link" href="https://dmoliveira.github.io/my-cv-public/cv/human/" target="_blank" rel="noreferrer">✦ Made by <strong>Diego Marinho</strong></a>
+        <a class="home-link" href="./index.html">🏠 Home</a>
+      </div>
+      <nav class="topbar-nav">
+        <a href="./conferences.html">Conferences</a><a href="./journals.html">Journals</a><a href="./areas.html">Areas</a><a href="./cfp.html">Upcoming CFPs</a><a href="./methodology.html">Methodology</a><a href="./support.html">Support</a>
+      </nav>
+      <div class="theme-toggle" role="group" aria-label="Theme selector"><button data-theme-option="auto" class="theme-button">Auto</button><button data-theme-option="light" class="theme-button">Light</button><button data-theme-option="dark" class="theme-button">Dark</button></div>
+    </div></div>
+    <main>
+      <section class="panel stack-md">
+        <div id="venue-breadcrumb" class="muted"></div>
+        <div id="venue-hero"></div>
+      </section>
+      <section class="panel split-grid">
+        <div class="graph-side-card stack-md">
+          <h3>Key actions</h3>
+          <div id="venue-actions" class="actions"></div>
+        </div>
+        <div class="graph-side-card stack-md">
+          <h3>Submission snapshot</h3>
+          <div id="venue-snapshot" class="stack-sm"></div>
+        </div>
+      </section>
+      <section class="panel split-grid">
+        <div class="graph-side-card stack-md">
+          <h3>Area fit</h3>
+          <div id="venue-area-fit" class="stack-sm"></div>
+        </div>
+        <div class="graph-side-card stack-md">
+          <h3>Source and freshness</h3>
+          <div id="venue-sources" class="stack-sm"></div>
+        </div>
+      </section>
+      <section class="panel stack-md">
+        <h2>History</h2>
+        <div id="venue-history"></div>
+      </section>
+    </main>
+    <footer class="footer"><p>Venue profile built from curated research publishing data.</p></footer>
+    <script src="./app.js"></script>
+  </body>
+</html>

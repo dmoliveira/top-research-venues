@@ -209,76 +209,18 @@ function compareTier(a, b) {
   return (order[a] ?? 99) - (order[b] ?? 99);
 }
 
-function normalizeConference(item) {
-  const primary = item.primary_area_slug || "systems";
-  return {
-    tier: "A",
-    area: "Computer Science",
-    publisher: "",
-    website: "",
-    submission_url: "",
-    frequency: "Annual",
-    review_model: "Double-blind",
-    acceptance_rate: "—",
-    usual_deadline_window: "TBA",
-    next_deadline: "",
-    notification_date: "",
-    camera_ready_date: "",
-    event_date: "",
-    location: "TBA",
-    location_country: "",
-    status: "TBA",
-    tags: [],
-    notes: "Curated venue entry.",
-    edition_log: [],
-    subareas: [],
-    subarea_slugs: [],
-    area_strengths: { [primary]: "core" },
-    ...item,
-    primary_area_slug: primary,
-    tags: item.tags || [],
-    subareas: item.subareas || [],
-    subarea_slugs: item.subarea_slugs || [],
-    edition_log: item.edition_log || [],
-    area_strengths: item.area_strengths || { [primary]: "core" }
-  };
-}
-
-function normalizeJournal(item) {
-  const primary = item.primary_area_slug || "systems";
-  return {
-    tier: "A",
-    area: "Computer Science",
-    publisher: "",
-    website: "",
-    submission_url: "",
-    oa_model: "Hybrid",
-    frequency: "Quarterly",
-    review_speed: "Moderate",
-    impact_note: "Curated journal entry",
-    latest_issue: "Latest issue TBA",
-    latest_publication_date: "",
-    tags: [],
-    notes: "Curated venue entry.",
-    issue_log: [],
-    subareas: [],
-    subarea_slugs: [],
-    area_strengths: { [primary]: "core" },
-    ...item,
-    primary_area_slug: primary,
-    tags: item.tags || [],
-    subareas: item.subareas || [],
-    subarea_slugs: item.subarea_slugs || [],
-    issue_log: item.issue_log || [],
-    area_strengths: item.area_strengths || { [primary]: "core" }
-  };
-}
-
 function formatDate(value) {
   if (!value) return "Rolling / TBA";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function formatShortDate(value) {
+  if (!value) return "TBA";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function daysUntil(value) {
@@ -298,6 +240,224 @@ function relativeDeadlineLabel(value) {
 
 function latestProceedings(item) {
   return item.edition_log?.[0]?.proceedings_url || "";
+}
+
+function currentIsoDate() {
+  return "2026-04-15";
+}
+
+function venueDetailUrl(item) {
+  return `./venue.html?type=${item.type || (item.oa_model !== undefined ? "journal" : "conference")}&slug=${encodeURIComponent(item.slug)}`;
+}
+
+function internalVenueLink(item) {
+  return `<a class="detail-title-link" href="${venueDetailUrl(item)}">${escapeHtml(item.short_name || item.name)}</a>`;
+}
+
+function normalizeSourceLinks(item, type) {
+  if (item.source_links?.length) return item.source_links;
+  const links = [];
+  if (item.website) links.push({ label: "Official site", url: item.website, kind: "official" });
+  if (item.submission_url) links.push({ label: type === "conference" ? "Submission" : "Author info", url: item.submission_url, kind: "submission" });
+  if (type === "conference" && latestProceedings(item)) links.push({ label: "Proceedings", url: latestProceedings(item), kind: "proceedings" });
+  if (type === "journal" && item.issue_log?.[0]?.issue_url) links.push({ label: "Latest issue", url: item.issue_log[0].issue_url, kind: "issue" });
+  return links;
+}
+
+function normalizeConference(item) {
+  const normalized = (function(orig){ return {
+    tier: "A", area: "Computer Science", publisher: "", website: "", submission_url: "", frequency: "Annual", review_model: "Double-blind", acceptance_rate: "—", usual_deadline_window: "TBA", next_deadline: "", notification_date: "", camera_ready_date: "", event_date: "", location: "TBA", location_country: "", status: "TBA", tags: [], notes: "Curated venue entry.", edition_log: [], subareas: [], subarea_slugs: [], area_strengths: { [(orig.primary_area_slug || "systems")]: "core" }, ...orig }; })(item);
+  normalized.type = "conference";
+  normalized.source_primary = normalized.source_primary || "official";
+  normalized.source_links = normalizeSourceLinks(normalized, "conference");
+  normalized.last_verified_at = normalized.last_verified_at || currentIsoDate();
+  normalized.data_confidence = normalized.data_confidence || (normalized.website ? "high" : "medium");
+  normalized.updated_at = normalized.updated_at || currentIsoDate();
+  normalized.created_at = normalized.created_at || currentIsoDate();
+  normalized.change_note = normalized.change_note || "Venue profile refreshed with current links and cadence.";
+  return normalized;
+}
+
+function normalizeJournal(item) {
+  const normalized = (function(orig){ return {
+    tier: "A", area: "Computer Science", publisher: "", website: "", submission_url: "", oa_model: "Hybrid", frequency: "Quarterly", review_speed: "Moderate", impact_note: "Curated journal entry", latest_issue: "Latest issue TBA", latest_publication_date: "", tags: [], notes: "Curated venue entry.", issue_log: [], subareas: [], subarea_slugs: [], area_strengths: { [(orig.primary_area_slug || "systems")]: "core" }, ...orig }; })(item);
+  normalized.type = "journal";
+  normalized.source_primary = normalized.source_primary || "official";
+  normalized.source_links = normalizeSourceLinks(normalized, "journal");
+  normalized.last_verified_at = normalized.last_verified_at || currentIsoDate();
+  normalized.data_confidence = normalized.data_confidence || (normalized.website ? "high" : "medium");
+  normalized.updated_at = normalized.updated_at || currentIsoDate();
+  normalized.created_at = normalized.created_at || currentIsoDate();
+  normalized.change_note = normalized.change_note || "Journal metadata and issue links refreshed.";
+  return normalized;
+}
+
+function normalizeCfp(item, venues) {
+  const venue = venues.get(item.venue_slug);
+  return {
+    source_primary: "official",
+    source_links: [
+      ...(venue?.website ? [{ label: "Official CFP", url: venue.website, kind: "official" }] : []),
+      ...(item.submission_url ? [{ label: "Submission", url: item.submission_url, kind: "submission" }] : [])
+    ],
+    last_verified_at: currentIsoDate(),
+    deadline_confidence: (item.confidence || "estimated").toLowerCase(),
+    updated_at: currentIsoDate(),
+    created_at: currentIsoDate(),
+    change_note: item.notes || "CFP entry refreshed.",
+    ...item
+  };
+}
+
+function renderSourcePrimaryBadge(kind) {
+  const label = { official: "Official", proceedings: "Proceedings", index: "Index", curated: "Curated" }[kind] || "Official";
+  return `<span class="trust-badge">${label}</span>`;
+}
+
+function renderFreshness(lastVerifiedAt) {
+  return `<span class="freshness-pill">Verified ${escapeHtml(formatDate(lastVerifiedAt))}</span>`;
+}
+
+function renderConfidenceBadge(value, type = "data") {
+  const key = (value || (type === "deadline" ? "estimated" : "medium")).toLowerCase();
+  const labelMap = {
+    high: "High confidence",
+    medium: "Medium confidence",
+    low: "Low confidence",
+    confirmed: "Confirmed",
+    estimated: "Estimated",
+    tba: "TBA"
+  };
+  return `<span class="confidence-pill confidence-${key}">${labelMap[key] || escapeHtml(value)}</span>`;
+}
+
+function renderTrustChips(item, type = "data") {
+  const confidence = type === "deadline" ? item.deadline_confidence || item.confidence : item.data_confidence;
+  return `<div class="trust-row">${renderSourcePrimaryBadge(item.source_primary)}${renderFreshness(item.last_verified_at)}${renderConfidenceBadge(confidence, type)}</div>`;
+}
+
+function renderTrustInline(item, type = "data") {
+  const source = { official: "Official", proceedings: "Proceedings", index: "Index", curated: "Curated" }[item.source_primary] || "Official";
+  const confidence = type === "deadline" ? (item.deadline_confidence || item.confidence || "estimated") : (item.data_confidence || "medium");
+  const label = type === "deadline" ? renderConfidenceBadge(confidence, "deadline") : renderConfidenceBadge(confidence, "data");
+  return `<div class="trust-inline">${source} · Verified ${escapeHtml(formatDate(item.last_verified_at))} · ${label.replace(/<[^>]+>/g, "")}</div>`;
+}
+
+function renderSourceLinks(item, limit = 2) {
+  return `<div class="source-links">${(item.source_links || []).slice(0, limit).map((entry) => miniLink(entry.label, entry.url, entry.kind === "official" ? "🌐" : entry.kind === "submission" ? "📝" : entry.kind === "proceedings" ? "📄" : "↗")).join("")}</div>`;
+}
+
+function isSameMonth(dateString, reference = new Date(currentIsoDate())) {
+  if (!dateString) return false;
+  const d = new Date(dateString);
+  return !Number.isNaN(d.getTime()) && d.getFullYear() === reference.getFullYear() && d.getMonth() === reference.getMonth();
+}
+
+function collectRecentUpdates(conferences, journals, cfps, venues) {
+  const ref = new Date(currentIsoDate());
+  const items = [
+    ...conferences.map((item) => ({ label: item.short_name, reason: item.change_note, date: item.updated_at, href: venueDetailUrl(item) })),
+    ...journals.map((item) => ({ label: item.short_name, reason: item.change_note, date: item.updated_at, href: venueDetailUrl(item) })),
+    ...cfps.map((item) => ({ label: venues.get(item.venue_slug)?.short_name || item.venue_slug, reason: item.change_note, date: item.updated_at, href: `./cfp.html?q=${encodeURIComponent(item.venue_slug)}` }))
+  ].filter((item) => isSameMonth(item.date, ref)).sort((a, b) => new Date(b.date) - new Date(a.date));
+  return items.slice(0, 5);
+}
+
+function collectRecentlyVerified(conferences, journals, cfps, venues) {
+  return [
+    ...conferences.map((item) => ({ label: item.short_name, reason: "Verified source links", date: item.last_verified_at, href: venueDetailUrl(item) })),
+    ...journals.map((item) => ({ label: item.short_name, reason: "Verified issue and author links", date: item.last_verified_at, href: venueDetailUrl(item) })),
+    ...cfps.map((item) => ({ label: venues.get(item.venue_slug)?.short_name || item.venue_slug, reason: "Verified CFP source", date: item.last_verified_at, href: `./cfp.html?q=${encodeURIComponent(item.venue_slug)}` }))
+  ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+}
+
+function getUpcomingTimelineBuckets(cfps, monthsAhead = 6) {
+  const base = new Date(currentIsoDate());
+  base.setDate(1);
+  const buckets = [];
+  for (let i = 0; i < monthsAhead; i += 1) {
+    const d = new Date(base.getFullYear(), base.getMonth() + i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    buckets.push({ key, label: d.toLocaleDateString(undefined, { month: "short", year: "numeric" }), total: 0, items: [] });
+  }
+  cfps.forEach((item) => {
+    if (!item.deadline) return;
+    const d = new Date(item.deadline);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const bucket = buckets.find((entry) => entry.key === key);
+    if (bucket && d >= new Date(currentIsoDate())) {
+      bucket.total += 1;
+      bucket.items.push(item);
+    }
+  });
+  return buckets;
+}
+
+function renderUpdateList(targetId, items, emptyText) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  el.innerHTML = items.length ? items.map((item) => `<article class="update-item stack-sm"><p><strong><a class="detail-title-link" href="${item.href}">${escapeHtml(item.label)}</a></strong></p><p class="muted">${escapeHtml(item.reason || "Updated metadata")}</p><p class="muted">${escapeHtml(formatDate(item.date))}</p></article>`).join("") : `<p class="muted">${escapeHtml(emptyText)}</p>`;
+}
+
+function renderDeadlineTimeline(cfps, venues) {
+  const bars = document.getElementById("deadline-timeline");
+  const list = document.getElementById("deadlines-this-month");
+  if (!bars && !list) return;
+  const buckets = getUpcomingTimelineBuckets(cfps);
+  const max = Math.max(1, ...buckets.map((bucket) => bucket.total));
+  if (bars) {
+    bars.innerHTML = buckets.map((bucket) => `<div class="timeline-bar-item"><div class="timeline-count">${bucket.total}</div><a class="timeline-bar-link" aria-label="${escapeHtml(bucket.label)}, ${bucket.total} upcoming deadlines" href="./cfp.html?month=${bucket.key}" style="height:${Math.max(18, Math.round((bucket.total / max) * 140))}px"></a><div class="timeline-month">${escapeHtml(bucket.label)}</div></div>`).join("");
+  }
+  if (list) {
+    const now = new Date(currentIsoDate());
+    const items = cfps.filter((item) => {
+      if (!item.deadline) return false;
+      const d = new Date(item.deadline);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d >= now;
+    }).sort((a, b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 5);
+    list.innerHTML = items.length ? items.map((item) => {
+      const venue = venues.get(item.venue_slug);
+      return `<article class="update-item stack-sm"><p><strong><a class="detail-title-link" href="./cfp.html?q=${encodeURIComponent(item.venue_slug)}">${escapeHtml(venue?.short_name || item.venue_slug)}</a></strong></p><p class="muted">${escapeHtml(item.track)} · ${relativeDeadlineLabel(item.deadline)}</p><p class="muted">${escapeHtml(formatDate(item.deadline))}</p></article>`;
+    }).join("") : `<p class="muted">No deadlines fall in the current month.</p>`;
+  }
+}
+
+function relatedVenuesFor(venue, conferences, journals) {
+  return [...conferences, ...journals].filter((item) => item.slug !== venue.slug && item.primary_area_slug === venue.primary_area_slug).slice(0, 6);
+}
+
+function renderVenuePage(conferences, journals, cfps) {
+  const hero = document.getElementById("venue-hero");
+  if (!hero) return;
+  const params = queryParams();
+  const type = params.get("type");
+  const slug = params.get("slug");
+  const collection = type === "journal" ? journals : conferences;
+  const venue = collection.find((item) => item.slug === slug);
+  const breadcrumb = document.getElementById("venue-breadcrumb");
+  const actions = document.getElementById("venue-actions");
+  const snapshot = document.getElementById("venue-snapshot");
+  const areaFit = document.getElementById("venue-area-fit");
+  const sources = document.getElementById("venue-sources");
+  const history = document.getElementById("venue-history");
+  if (!venue) {
+    hero.innerHTML = `<h1>Venue not found</h1><p class="muted">Try returning to the conference or journal directory.</p>`;
+    return;
+  }
+  document.title = `${venue.short_name} · Top Research Venues`;
+  breadcrumb.innerHTML = `<a href="./index.html">Home</a> / <a href="./${type === "journal" ? "journals" : "conferences"}.html">${type === "journal" ? "Journals" : "Conferences"}</a> / ${escapeHtml(venue.short_name)}`;
+  hero.innerHTML = `<p class="eyebrow">${type === "journal" ? "📚 Journal profile" : "🏛 Conference profile"}</p><h1>${escapeHtml(venue.short_name)}</h1><p class="muted">${escapeHtml(venue.name)}</p><div class="inline-meta"><span class="badge">${escapeHtml(venue.area)}</span><span class="badge">${escapeHtml(venue.tier)}</span>${type === "journal" ? `<span class="badge">${escapeHtml(venue.latest_issue || "Latest issue TBA")}</span>` : statusBadge(venue.status)}</div><p>${escapeHtml(venue.notes || "")}</p>${renderTrustChips(venue)}`;
+  actions.innerHTML = `${renderSourceLinks(venue, 3)}${miniLink(type === "journal" ? "Author info" : "Submit", venue.submission_url, type === "journal" ? "✍️" : "📝")}${type === "conference" ? miniLink("Proceedings", latestProceedings(venue), "📄") : miniLink("Latest issue", venue.issue_log?.[0]?.issue_url, "📰")}`;
+  snapshot.innerHTML = type === "journal"
+    ? `<div class="snapshot-grid"><div class="snapshot-card"><strong>Publisher</strong><span>${escapeHtml(venue.publisher)}</span></div><div class="snapshot-card"><strong>OA model</strong><span>${escapeHtml(venue.oa_model)}</span></div><div class="snapshot-card"><strong>Frequency</strong><span>${escapeHtml(venue.frequency)}</span></div><div class="snapshot-card"><strong>Review speed</strong><span>${escapeHtml(venue.review_speed)}</span></div><div class="snapshot-card"><strong>Latest issue</strong><span>${escapeHtml(venue.latest_issue)}</span></div><div class="snapshot-card"><strong>Latest publication</strong><span>${escapeHtml(formatDate(venue.latest_publication_date))}</span></div></div>`
+    : `<div class="snapshot-grid"><div class="snapshot-card"><strong>Next deadline</strong><span>${escapeHtml(formatDate(venue.next_deadline))}</span></div><div class="snapshot-card"><strong>Notification</strong><span>${escapeHtml(formatDate(venue.notification_date))}</span></div><div class="snapshot-card"><strong>Event date</strong><span>${escapeHtml(formatDate(venue.event_date))}</span></div><div class="snapshot-card"><strong>Location</strong><span>${formatLocation(venue.location, venue.location_country)}</span></div><div class="snapshot-card"><strong>Review model</strong><span>${escapeHtml(venue.review_model)}</span></div><div class="snapshot-card"><strong>Acceptance</strong><span>${escapeHtml(venue.acceptance_rate)}</span></div></div>`;
+  areaFit.innerHTML = `<p><strong>Primary area:</strong> ${escapeHtml(venue.primary_area_slug)}</p><div>${tagList(venue.subareas || [])}</div><h4>Related venues</h4><div class="stack-sm">${relatedVenuesFor(venue, conferences, journals).map((item) => `<a class="detail-title-link" href="${venueDetailUrl(item)}">${escapeHtml(item.short_name)}</a>`).join("<br />")}</div>`;
+  sources.innerHTML = `${renderTrustChips(venue)}${renderSourceLinks(venue, 3)}<p class="muted">Primary source: ${escapeHtml(venue.source_primary || "official")}</p>`;
+  if (type === "journal") {
+    history.innerHTML = `<div class="history-list">${(venue.issue_log || []).map((log) => `<article class="history-item stack-sm"><strong>Vol. ${escapeHtml(log.volume)}${log.issue ? `, Issue ${escapeHtml(log.issue)}` : ""}</strong><p class="muted">${escapeHtml(formatDate(log.date))}</p><p>${escapeHtml(log.featured_articles?.[0]?.title || "Issue summary")}</p>${miniLink("Issue", log.issue_url, "📰")}</article>`).join("") || `<p class="muted">No issue history recorded yet.</p>`}</div>`;
+  } else {
+    history.innerHTML = `<div class="history-list">${(venue.edition_log || []).map((log) => `<article class="history-item stack-sm"><strong>${escapeHtml(String(log.year))}</strong><p class="muted">${formatLocation(log.location, log.location_country)} · ${escapeHtml(log.date_range)}</p><p>${escapeHtml(log.acceptance_rate)} acceptance${log.papers_published ? ` · ${log.papers_published} papers` : ""}</p>${miniLink("Proceedings", log.proceedings_url, "📄")}</article>`).join("") || `<p class="muted">No edition history recorded yet.</p>`}</div>`;
+  }
 }
 
 function renderTrendCard(item) {
@@ -370,10 +530,11 @@ function renderFeatured(featured, confs, journals) {
           <span class="badge">${escapeHtml(item.type === "conference" ? "Conference" : "Journal")}</span>
           <span class="badge">${escapeHtml(item.area)}</span>
         </div>
-        <h3>${link(item.short_name || item.name, item.website)}</h3>
+        <h3>${internalVenueLink(item)}</h3>
         <p class="muted">${escapeHtml(item.notes || "")}</p>
         ${item.type === "conference" ? `<div class="meta-list"><div class="meta-row">📍 ${formatLocation(item.location, item.location_country)}</div><div class="meta-row">🗓 ${formatDate(item.event_date)}</div></div>` : `<div class="meta-list"><div class="meta-row">🏢 ${escapeHtml(item.publisher)}</div><div class="meta-row">📰 ${escapeHtml(item.latest_issue || "Latest issue TBA")}</div></div>`}
         <div>${tagList(item.subareas?.slice(0, 3) || item.tags || [])}</div>
+        ${renderTrustChips(item)}
         <div class="actions">
           ${miniLink("Site", item.website, "🌐")}
           ${miniLink(item.type === "conference" ? "Submit" : "Author info", item.submission_url, item.type === "conference" ? "📝" : "✍️")}
@@ -418,7 +579,7 @@ function renderHomeConferencePreview(conferences) {
   body.innerHTML = previewRows.map((item) => `
     <tr>
       <td data-label="Tier">${escapeHtml(item.tier)}</td>
-      <td data-label="Conference">${link(item.short_name, item.website)}<div class="muted">${escapeHtml(item.name)}</div></td>
+      <td data-label="Conference">${internalVenueLink(item)}<div class="muted">${escapeHtml(item.name)}</div>${renderTrustInline(item)}</td>
       <td data-label="Area">${escapeHtml(item.area)}</td>
       <td data-label="Deadline">${formatDate(item.next_deadline)}<div class="muted">${relativeDeadlineLabel(item.next_deadline)}</div></td>
       <td data-label="Event">${formatDate(item.event_date)}<div class="muted">${formatLocation(item.location, item.location_country)}</div></td>
@@ -439,7 +600,7 @@ function renderHomeJournalPreview(journals) {
   body.innerHTML = previewRows.map((item) => `
     <tr>
       <td data-label="Tier">${escapeHtml(item.tier)}</td>
-      <td data-label="Journal">${link(item.short_name, item.website)}<div class="muted">${escapeHtml(item.name)}</div></td>
+      <td data-label="Journal">${internalVenueLink(item)}<div class="muted">${escapeHtml(item.name)}</div>${renderTrustInline(item)}</td>
       <td data-label="Area">${escapeHtml(item.area)}</td>
       <td data-label="Publisher">${escapeHtml(item.publisher)}</td>
       <td data-label="OA">${escapeHtml(item.oa_model)}</td>
@@ -471,6 +632,12 @@ function renderLogs(conferences, journals) {
   if (trendGrid) {
     trendGrid.innerHTML = conferences.slice(0, 4).map(renderTrendCard).join("");
   }
+}
+
+function renderHomepageActivity(conferences, journals, cfps, venues) {
+  renderUpdateList("updates-this-month", collectRecentUpdates(conferences, journals, cfps, venues), "No venue updates recorded this month yet.");
+  renderUpdateList("recently-verified", collectRecentlyVerified(conferences, journals, cfps, venues), "No recent verification activity recorded yet.");
+  renderDeadlineTimeline(cfps, venues);
 }
 
 function initConferencePage(conferences) {
@@ -517,7 +684,7 @@ function initConferencePage(conferences) {
     body.innerHTML = pagedRows.map((item) => `
       <tr>
         <td data-label="Tier">${escapeHtml(item.tier)}</td>
-        <td data-label="Conference">${link(item.short_name, item.website)}<div class="muted">${escapeHtml(item.name)}</div></td>
+        <td data-label="Conference">${internalVenueLink(item)}<div class="muted">${escapeHtml(item.name)}</div>${renderTrustInline(item)}</td>
         <td data-label="Area">${escapeHtml(item.area)}<div class="muted">${tagList(item.subareas || [])}</div></td>
         <td data-label="Deadline">${formatDate(item.next_deadline)}<div class="muted">${relativeDeadlineLabel(item.next_deadline)}</div></td>
         <td data-label="Event">${formatDate(item.event_date)}<div class="muted">${formatLocation(item.location, item.location_country)}</div></td>
@@ -585,7 +752,7 @@ function initJournalPage(journals) {
     body.innerHTML = pagedRows.map((item) => `
       <tr>
         <td data-label="Tier">${escapeHtml(item.tier)}</td>
-        <td data-label="Journal">${link(item.short_name, item.website)}<div class="muted">${escapeHtml(item.name)}</div></td>
+        <td data-label="Journal">${internalVenueLink(item)}<div class="muted">${escapeHtml(item.name)}</div>${renderTrustInline(item)}</td>
         <td data-label="Area">${escapeHtml(item.area)}<div class="muted">${tagList(item.subareas || [])}</div></td>
         <td data-label="Publisher">${escapeHtml(item.publisher)}</td>
         <td data-label="OA model">${escapeHtml(item.oa_model)}</td>
@@ -661,7 +828,7 @@ function initCfpPage(cfps, conferences, journals, areas) {
     body.innerHTML = pagedRows.map((item) => {
       const venue = venues.get(item.venue_slug);
       return `<tr>
-        <td data-label="Venue">${escapeHtml(venue?.short_name || item.venue_slug)}<div class="muted">${escapeHtml(venue?.area || "")} · ${formatLocation(venue?.location, venue?.location_country)}</div></td>
+        <td data-label="Venue">${venue ? `<a class="detail-title-link" href="${venueDetailUrl(venue)}">${escapeHtml(venue.short_name || item.venue_slug)}</a>` : escapeHtml(item.venue_slug)}<div class="muted">${escapeHtml(venue?.area || "")} · ${formatLocation(venue?.location, venue?.location_country)}</div>${renderTrustInline(item, "deadline")}</td>
         <td data-label="Type">${escapeHtml(item.venue_type)}</td>
         <td data-label="Track">${escapeHtml(item.track)}</td>
         <td data-label="Deadline">${formatDate(item.deadline)}<div class="muted">${relativeDeadlineLabel(item.deadline)}</div></td>
@@ -800,11 +967,12 @@ async function main() {
   ]);
   const conferences = conferenceData.conferences.concat(conferenceExtraData.conferences).map(normalizeConference);
   const journals = journalData.journals.concat(journalExtraData.journals).map(normalizeJournal);
-  const cfps = cfpData.cfps;
+  let cfps = cfpData.cfps;
   const areas = areaData.areas;
   meta.coverage.conferences = conferences.length;
   meta.coverage.journals = journals.length;
   const venues = venueMap(conferences, journals);
+  cfps = cfps.map((item) => normalizeCfp(item, venues));
 
   renderMeta(meta);
   renderFeatured(featuredData, conferences, journals);
@@ -812,10 +980,12 @@ async function main() {
   renderHomeConferencePreview(conferences);
   renderHomeJournalPreview(journals);
   renderLogs(conferences, journals);
+  renderHomepageActivity(conferences, journals, cfps, venues);
   initConferencePage(conferences);
   initJournalPage(journals);
   initCfpPage(cfps, conferences, journals, areas);
   initAreasPage(areas, conferences, journals, cfps);
+  renderVenuePage(conferences, journals, cfps);
 }
 
 window.addEventListener("resize", syncTopbarOffset);
