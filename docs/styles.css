@@ -401,6 +401,40 @@ tbody tr:first-child td { padding-top: 18px; }
   background: color-mix(in srgb, var(--panel-solid) 90%, transparent);
 }
 .update-item p { margin: 0; }
+.compare-shell:empty,
+#watchlist-grid:empty { display: none; }
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.compare-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--panel-solid) 92%, transparent);
+}
+.action-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.tiny-button {
+  border: 1px solid var(--line);
+  background: var(--chip);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tiny-button.is-active,
+.tiny-button:hover {
+  background: var(--chip-strong);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
 .detail-title-link {
   color: inherit;
   text-decoration: none;

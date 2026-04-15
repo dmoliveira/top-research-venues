@@ -26,6 +26,8 @@ const PAGE_SEARCH_TARGETS = {
   "methodology.html": "conferences.html",
   "support.html": "conferences.html"
 };
+const WATCHLIST_KEY = "venueatlas-watchlist";
+const COMPARE_KEY = "venueatlas-compare";
 
 function syncTopbarOffset() {
   const topbar = document.querySelector(".topbar-shell");
@@ -98,6 +100,26 @@ function currentPageName() {
 
 function queryParams() {
   return new URLSearchParams(window.location.search);
+}
+
+function loadStored(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+  } catch {
+    return fallback;
+  }
+}
+
+function saveStored(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function watchlistItems() {
+  return loadStored(WATCHLIST_KEY, []);
+}
+
+function compareItems(type) {
+  return loadStored(COMPARE_KEY, { conference: [], journal: [] })[type] || [];
 }
 
 function initTopbarQuickSearch() {
@@ -375,6 +397,18 @@ function collectRecentUpdates(conferences, journals, cfps, venues) {
   return items.slice(0, 5);
 }
 
+function collectWeeklyUpdates(conferences, journals, cfps, venues) {
+  return [
+    ...conferences.map((item) => ({ label: item.short_name, reason: item.change_note, date: item.updated_at, href: venueDetailUrl(item) })),
+    ...journals.map((item) => ({ label: item.short_name, reason: item.change_note, date: item.updated_at, href: venueDetailUrl(item) })),
+    ...cfps.map((item) => ({ label: venues.get(item.venue_slug)?.short_name || item.venue_slug, reason: item.change_note, date: item.updated_at, href: `./cfp.html?q=${encodeURIComponent(item.venue_slug)}` }))
+  ].filter((item) => {
+    const d = new Date(item.date);
+    const ref = new Date(currentIsoDate());
+    return !Number.isNaN(d.getTime()) && ((ref - d) / 86400000) <= 7;
+  }).sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+}
+
 function collectRecentlyVerified(conferences, journals, cfps, venues) {
   return [
     ...conferences.map((item) => ({ label: item.short_name, reason: "Verified source links", date: item.last_verified_at, href: venueDetailUrl(item) })),
@@ -409,6 +443,28 @@ function renderUpdateList(targetId, items, emptyText) {
   const el = document.getElementById(targetId);
   if (!el) return;
   el.innerHTML = items.length ? items.map((item) => `<article class="update-item stack-sm"><p><strong><a class="detail-title-link" href="${item.href}">${escapeHtml(item.label)}</a></strong></p><p class="muted">${escapeHtml(item.reason || "Updated metadata")}</p><p class="muted">${escapeHtml(formatDate(item.date))}</p></article>`).join("") : `<p class="muted">${escapeHtml(emptyText)}</p>`;
+}
+
+function renderWatchlist(venues) {
+  const el = document.getElementById("watchlist-grid");
+  if (!el) return;
+  const items = watchlistItems().map(({ slug, type }) => venues.get(slug)).filter(Boolean).slice(0, 6);
+  el.innerHTML = items.length ? items.map((item) => `<article class="venue-card stack-sm"><div class="inline-meta"><span class="badge">${escapeHtml(item.area)}</span><span class="badge">Saved</span></div><h3>${internalVenueLink(item)}</h3><p class="muted">${escapeHtml(item.notes || "")}</p><div class="actions">${miniLink("Open", venueDetailUrl(item), "🔍").replace('target="_blank" rel="noreferrer"','')}${miniLink("Site", item.website, "🌐")}</div></article>`).join("") : `<article class="update-item"><p class="muted">No saved venues yet. Use the Save button on conference and journal listings.</p></article>`;
+}
+
+function renderCompareTray(targetId, type, rows) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const selected = compareItems(type).map((slug) => rows.find((item) => item.slug === slug)).filter(Boolean);
+  el.innerHTML = selected.length ? `<div class="stack-sm"><div class="inline-meta"><span class="badge">Compare ${selected.length}/4</span></div><div class="compare-grid">${selected.map((item) => `<article class="compare-card stack-sm"><strong>${escapeHtml(item.short_name)}</strong><p class="muted">${escapeHtml(item.area)} · ${escapeHtml(item.tier)}</p><p class="muted">${type === "conference" ? `${formatDate(item.next_deadline)} · ${escapeHtml(item.acceptance_rate)}` : `${escapeHtml(item.latest_issue)} · ${escapeHtml(item.review_speed)}`}</p><div class="action-cluster"><button class="tiny-button" data-remove-compare="${escapeHtml(item.slug)}">Remove</button></div></article>`).join("")}</div></div>` : "";
+  el.querySelectorAll("[data-remove-compare]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const state = loadStored(COMPARE_KEY, { conference: [], journal: [] });
+      state[type] = state[type].filter((slug) => slug !== button.dataset.removeCompare);
+      saveStored(COMPARE_KEY, state);
+      renderCompareTray(targetId, type, rows);
+    });
+  });
 }
 
 function renderDeadlineTimeline(cfps, venues) {
@@ -648,8 +704,10 @@ function renderLogs(conferences, journals) {
 
 function renderHomepageActivity(conferences, journals, cfps, venues) {
   renderUpdateList("updates-this-month", collectRecentUpdates(conferences, journals, cfps, venues), "No venue updates recorded this month yet.");
+  renderUpdateList("updates-this-week", collectWeeklyUpdates(conferences, journals, cfps, venues), "No venue updates recorded this week yet.");
   renderUpdateList("recently-verified", collectRecentlyVerified(conferences, journals, cfps, venues), "No recent verification activity recorded yet.");
   renderDeadlineTimeline(cfps, venues);
+  renderWatchlist(venues);
 }
 
 function initConferencePage(conferences) {
@@ -666,6 +724,7 @@ function initConferencePage(conferences) {
   const trendGrid = document.getElementById("conference-trend-grid");
   const pagerTop = document.getElementById("conference-pagination-top");
   const pagerBottom = document.getElementById("conference-pagination-bottom");
+  const compare = document.getElementById("conference-compare");
   let page = 1;
   let pageSize = 5;
   const prefill = getPrefillQuery();
@@ -703,7 +762,7 @@ function initConferencePage(conferences) {
         <td data-label="Frequency">${escapeHtml(item.frequency)}</td>
         <td data-label="Acceptance">${escapeHtml(item.acceptance_rate)}</td>
         <td data-label="Status">${statusBadge(item.status)}</td>
-        <td data-label="Links">${link("Site", item.website)} · ${link("Submit", item.submission_url)} · ${link("Proceedings", latestProceedings(item))}</td>
+        <td data-label="Links">${link("Site", item.website)} · ${link("Submit", item.submission_url)} · ${link("Proceedings", latestProceedings(item))}<div class="action-cluster"><button class="tiny-button" data-save-venue="${escapeHtml(item.slug)}">Save</button><button class="tiny-button" data-compare-venue="${escapeHtml(item.slug)}">Compare</button></div></td>
       </tr>
     `).join("");
     logGrid.innerHTML = rows.slice(0, 6).map((item) => {
@@ -711,8 +770,26 @@ function initConferencePage(conferences) {
       return log ? `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)} ${log.year}</h3><p class="muted">${formatLocation(log.location, log.location_country)}</p><p>${escapeHtml(log.acceptance_rate)} acceptance · ${log.papers_published ? `${log.papers_published} papers` : "paper count TBA"}</p><div>${tagList(log.highlights || [])}</div><div class="actions">${miniLink("Proceedings", log.proceedings_url, "📄")}</div></article>` : "";
     }).join("");
     if (trendGrid) trendGrid.innerHTML = rows.slice(0, 6).map(renderTrendCard).join("");
+    renderCompareTray("conference-compare", "conference", conferences);
     renderPagination(pagerTop, page, rows.length, pageSize, (next) => { page = next; draw(); }, (size) => { pageSize = size; page = 1; draw(); });
     renderPagination(pagerBottom, page, rows.length, pageSize, (next) => { page = next; draw(); }, (size) => { pageSize = size; page = 1; draw(); });
+    body.querySelectorAll("[data-save-venue]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const state = watchlistItems();
+        if (!state.find((item) => item.slug === button.dataset.saveVenue)) {
+          state.push({ slug: button.dataset.saveVenue, type: "conference" });
+          saveStored(WATCHLIST_KEY, state);
+        }
+      });
+    });
+    body.querySelectorAll("[data-compare-venue]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const state = loadStored(COMPARE_KEY, { conference: [], journal: [] });
+        if (!state.conference.includes(button.dataset.compareVenue) && state.conference.length < 4) state.conference.push(button.dataset.compareVenue);
+        saveStored(COMPARE_KEY, state);
+        renderCompareTray("conference-compare", "conference", conferences);
+      });
+    });
   }
 
   [search, area, status, tier, sort].forEach((element) => element.addEventListener("input", () => { page = 1; draw(); }));
@@ -733,6 +810,7 @@ function initJournalPage(journals) {
   const logGrid = document.getElementById("journal-log-grid");
   const pagerTop = document.getElementById("journal-pagination-top");
   const pagerBottom = document.getElementById("journal-pagination-bottom");
+  const compare = document.getElementById("journal-compare");
   let page = 1;
   let pageSize = 5;
   const prefill = getPrefillQuery();
@@ -771,15 +849,33 @@ function initJournalPage(journals) {
         <td data-label="Frequency">${escapeHtml(item.frequency)}</td>
         <td data-label="Review speed">${escapeHtml(item.review_speed)}</td>
         <td data-label="Latest issue">${escapeHtml(item.latest_issue)}<div class="muted">${formatDate(item.latest_publication_date)}</div></td>
-        <td data-label="Links">${link("Site", item.website)} · ${link("Submit", item.submission_url)} · ${link("Issue", item.issue_log?.[0]?.issue_url)}</td>
+        <td data-label="Links">${link("Site", item.website)} · ${link("Submit", item.submission_url)} · ${link("Issue", item.issue_log?.[0]?.issue_url)}<div class="action-cluster"><button class="tiny-button" data-save-venue="${escapeHtml(item.slug)}">Save</button><button class="tiny-button" data-compare-venue="${escapeHtml(item.slug)}">Compare</button></div></td>
       </tr>
     `).join("");
     logGrid.innerHTML = rows.slice(0, 6).map((item) => {
       const log = item.issue_log?.[0];
       return log ? `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)}</h3><p class="muted">Vol. ${escapeHtml(log.volume)}${log.issue ? `, Issue ${escapeHtml(log.issue)}` : ""}</p><p>${formatDate(log.date)}</p><p class="muted">${escapeHtml(log.featured_articles?.[0]?.title || "")}</p><div class="actions">${miniLink("Issue", log.issue_url, "📰")}${miniLink("Article", log.featured_articles?.[0]?.url, "📄")}</div></article>` : "";
     }).join("");
+    renderCompareTray("journal-compare", "journal", journals);
     renderPagination(pagerTop, page, rows.length, pageSize, (next) => { page = next; draw(); }, (size) => { pageSize = size; page = 1; draw(); });
     renderPagination(pagerBottom, page, rows.length, pageSize, (next) => { page = next; draw(); }, (size) => { pageSize = size; page = 1; draw(); });
+    body.querySelectorAll("[data-save-venue]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const state = watchlistItems();
+        if (!state.find((item) => item.slug === button.dataset.saveVenue)) {
+          state.push({ slug: button.dataset.saveVenue, type: "journal" });
+          saveStored(WATCHLIST_KEY, state);
+        }
+      });
+    });
+    body.querySelectorAll("[data-compare-venue]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const state = loadStored(COMPARE_KEY, { conference: [], journal: [] });
+        if (!state.journal.includes(button.dataset.compareVenue) && state.journal.length < 4) state.journal.push(button.dataset.compareVenue);
+        saveStored(COMPARE_KEY, state);
+        renderCompareTray("journal-compare", "journal", journals);
+      });
+    });
   }
 
   [search, area, oa, tier, sort].forEach((element) => element.addEventListener("input", () => { page = 1; draw(); }));
