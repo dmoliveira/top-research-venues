@@ -659,11 +659,11 @@ function renderMeta(meta) {
     <h2>${escapeHtml(meta.title)}</h2>
     <p>${escapeHtml(meta.source_note)}</p>
     <p><strong>Updated:</strong> ${escapeHtml(meta.updated_at)}</p>
-    <div class="stat-grid">
-      <span class="badge">${meta.coverage.conferences} conferences</span>
-      <span class="badge">${meta.coverage.journals} journals</span>
-      <span class="badge">${meta.coverage.cfps} CFPs</span>
-      <span class="badge">${meta.coverage.areas} areas</span>
+    <div class="stat-strip">
+      <div class="stat-card"><strong>${meta.coverage.conferences}</strong><span>conferences tracked</span></div>
+      <div class="stat-card"><strong>${meta.coverage.journals}</strong><span>journals tracked</span></div>
+      <div class="stat-card"><strong>${meta.coverage.cfps}</strong><span>CFP entries tracked</span></div>
+      <div class="stat-card"><strong>${meta.coverage.areas}</strong><span>research areas mapped</span></div>
     </div>
     <p class="topbar-status">💡 Best experience: browse areas first, then compare deadlines, proceedings, and journals.</p>
   `;
