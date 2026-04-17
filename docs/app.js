@@ -796,6 +796,39 @@ function renderHomepageActivity(conferences, journals, cfps, venues) {
   renderWatchlist(venues);
 }
 
+function renderAreaSpotlights(areas, conferences, journals, cfps, venues) {
+  const el = document.getElementById("area-spotlight-grid");
+  if (!el) return;
+  const selectedAreas = areas.slice(0, 4);
+  el.innerHTML = selectedAreas.map((area) => {
+    const topConference = area.top_conference_slugs?.map((slug) => venues.get(slug)).find(Boolean);
+    const topJournal = area.top_journal_slugs?.map((slug) => venues.get(slug)).find(Boolean);
+    const nearestDeadline = cfps
+      .filter((item) => item.area_slug === area.slug && item.deadline && (daysUntil(item.deadline) ?? 9999) >= 0)
+      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))[0];
+    const deadlineVenue = nearestDeadline ? venues.get(nearestDeadline.venue_slug) : null;
+    return `
+      <article class="venue-card stack-sm">
+        <div class="inline-meta">
+          <span class="badge">${escapeHtml(area.family)}</span>
+          <span class="badge">${escapeHtml(area.name)}</span>
+        </div>
+        <h3 class="featured-title"><a class="detail-title-link" href="./areas.html?q=${encodeURIComponent(area.slug)}">${escapeHtml(area.name)}</a></h3>
+        <p class="featured-subline">${escapeHtml(area.description)}</p>
+        <div class="meta-list">
+          <div class="meta-row">🏛 Top conference: ${topConference ? internalVenueLink(topConference) : "TBA"}</div>
+          <div class="meta-row">📚 Top journal: ${topJournal ? internalVenueLink(topJournal) : "TBA"}</div>
+          <div class="meta-row">⏰ Next deadline: ${nearestDeadline ? `${escapeHtml(deadlineVenue?.short_name || nearestDeadline.venue_slug)} · ${formatShortDate(nearestDeadline.deadline)} · ${relativeDeadlineLabel(nearestDeadline.deadline)}` : "No active deadline recorded"}</div>
+        </div>
+        <div class="actions">
+          <a class="mini-link" href="./areas.html?q=${encodeURIComponent(area.slug)}">🧭 Explore area</a>
+          ${nearestDeadline ? `<a class="mini-link" href="./cfp.html?q=${encodeURIComponent(nearestDeadline.venue_slug)}">⏰ View deadline</a>` : ""}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
 function initConferencePage(conferences) {
   const body = document.getElementById("conference-body");
   if (!body) return;
@@ -1210,6 +1243,7 @@ async function main() {
   renderHomeJournalPreview(journals);
   renderLogs(conferences, journals);
   renderHomepageActivity(conferences, journals, cfps, venues);
+  renderAreaSpotlights(areas, conferences, journals, cfps, venues);
   initConferencePage(conferences);
   initJournalPage(journals);
   initCfpPage(cfps, conferences, journals, areas);
