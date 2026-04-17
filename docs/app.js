@@ -509,6 +509,44 @@ function renderDeadlineTimeline(cfps, venues) {
   }
 }
 
+function isRollingSubmission(item) {
+  return item.venue_type === "Journal" && (!item.deadline || item.notification_date === "Rolling");
+}
+
+function getUrgentConferenceDeadlines(cfps) {
+  return cfps
+    .filter((item) => item.venue_type === "Conference" && item.deadline && (daysUntil(item.deadline) ?? 9999) >= 0)
+    .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
+    .slice(0, 5);
+}
+
+function getRollingJournalSubmissions(cfps, venues) {
+  return cfps
+    .filter((item) => isRollingSubmission(item))
+    .sort((a, b) => (venues.get(a.venue_slug)?.short_name || a.venue_slug).localeCompare(venues.get(b.venue_slug)?.short_name || b.venue_slug))
+    .slice(0, 6);
+}
+
+function renderCfpUrgencyBlocks(cfps, venues) {
+  const urgentEl = document.getElementById("cfp-urgent-grid");
+  const rollingEl = document.getElementById("cfp-rolling-grid");
+  if (!urgentEl && !rollingEl) return;
+  const urgent = getUrgentConferenceDeadlines(cfps);
+  const rolling = getRollingJournalSubmissions(cfps, venues);
+  if (urgentEl) {
+    urgentEl.innerHTML = urgent.length ? urgent.map((item) => {
+      const venue = venues.get(item.venue_slug);
+      return `<article class="deadline-card stack-sm"><div class="inline-meta">${statusBadge(item.status)} ${renderConfidenceBadge(item.deadline_confidence || item.confidence, "deadline")}</div><h3>${escapeHtml(venue?.short_name || item.venue_slug)}</h3><p class="muted">${escapeHtml(item.track)} · ${escapeHtml(venue?.area || "")}</p><p><strong>${formatDate(item.deadline)}</strong> · ${relativeDeadlineLabel(item.deadline)}</p><div class="actions">${miniLink("Submit", item.submission_url, "📝")}${miniLink("Venue", venue?.website, "🌐")}</div></article>`;
+    }).join("") : `<p class="empty-state">No urgent conference deadlines found.</p>`;
+  }
+  if (rollingEl) {
+    rollingEl.innerHTML = rolling.length ? rolling.map((item) => {
+      const venue = venues.get(item.venue_slug);
+      return `<article class="venue-card stack-sm"><h3>${venue ? internalVenueLink(venue) : escapeHtml(item.venue_slug)}</h3><p class="muted">${escapeHtml(venue?.area || "")} · ${escapeHtml(venue?.oa_model || "Rolling journal submission")}${venue?.review_speed ? ` · ${escapeHtml(venue.review_speed)} review` : ""}</p><p>Rolling submission</p><div class="actions">${miniLink("Author info", venue?.submission_url || item.submission_url, "✍️")}${miniLink("Official site", venue?.website, "🌐")}</div></article>`;
+    }).join("") : `<p class="empty-state">No rolling journal submissions recorded.</p>`;
+  }
+}
+
 function relatedVenuesFor(venue, conferences, journals) {
   return [...conferences, ...journals].filter((item) => item.slug !== venue.slug && item.primary_area_slug === venue.primary_area_slug).slice(0, 6);
 }
@@ -963,6 +1001,7 @@ function initCfpPage(cfps, conferences, journals, areas) {
     const venue = venues.get(item.venue_slug);
     return `<article class="deadline-card stack-sm"><h3>${escapeHtml(venue?.short_name || item.venue_slug)}</h3><p>${formatDate(item.deadline)}${item.deadline ? ` · ${relativeDeadlineLabel(item.deadline)}` : ""}</p><p class="muted">${formatLocation(venue?.location, venue?.location_country)} · ${escapeHtml(item.track)} · ${escapeHtml(item.confidence)}</p><div class="actions">${miniLink("Submit", item.submission_url, "📝")}${miniLink("Venue", venue?.website, "🌐")}</div></article>`;
   }).join("");
+  renderCfpUrgencyBlocks(cfps, venues);
 
   function currentData() {
     return cfps

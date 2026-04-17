@@ -413,6 +413,10 @@ tbody tr:first-child td { padding-top: 18px; }
   background: color-mix(in srgb, var(--panel-solid) 90%, transparent);
 }
 .update-item p { margin: 0; }
+.empty-state {
+  color: var(--muted);
+  font-size: .92rem;
+}
 .compare-shell:empty,
 #watchlist-grid:empty { display: none; }
 .compare-status:empty { display: none; }
