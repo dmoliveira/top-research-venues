@@ -572,6 +572,13 @@ function getPrimaryAction(venue) {
     : { label: "Open author info", url: venue.submission_url || venue.website, icon: "✍️", note: "Best next action if you are evaluating journal submission requirements." };
 }
 
+function getVenueWhyUseIt(venue) {
+  if (venue.type === "conference") {
+    return `${venue.short_name} is useful when you want fast-moving visibility in ${venue.area}, community recognition, and a strong proceedings footprint.`;
+  }
+  return `${venue.short_name} is useful when you want a more archival publication path, deeper experiments, and a longer-lived journal record in ${venue.area}.`;
+}
+
 function renderVenuePage(conferences, journals, cfps) {
   const hero = document.getElementById("venue-hero");
   if (!hero) return;
@@ -587,6 +594,8 @@ function renderVenuePage(conferences, journals, cfps) {
   const primaryAction = document.getElementById("venue-primary-action");
   const areaFit = document.getElementById("venue-area-fit");
   const sources = document.getElementById("venue-sources");
+  const why = document.getElementById("venue-why");
+  const related = document.getElementById("venue-related");
   const history = document.getElementById("venue-history");
   if (!venue) {
     hero.innerHTML = `<h1>Venue not found</h1><p class="muted">Try returning to the conference or journal directory.</p>`;
@@ -600,11 +609,15 @@ function renderVenuePage(conferences, journals, cfps) {
     const action = getPrimaryAction(venue);
     primaryAction.innerHTML = `<div class="best-for-card stack-sm"><p class="muted">${escapeHtml(action.note)}</p>${miniLink(action.label, action.url, action.icon)}</div>`;
   }
+  if (why) why.innerHTML = `<div class="best-for-card stack-sm"><p class="muted">${escapeHtml(getVenueWhyUseIt(venue))}</p></div>`;
   actions.innerHTML = `${renderSourceLinks(venue, 3)}${miniLink(type === "journal" ? "Author info" : "Submit", venue.submission_url, type === "journal" ? "✍️" : "📝")}${type === "conference" ? miniLink("Proceedings", latestProceedings(venue), "📄") : miniLink("Latest issue", venue.issue_log?.[0]?.issue_url, "📰")}`;
   snapshot.innerHTML = type === "journal"
     ? `<div class="snapshot-grid"><div class="snapshot-card"><strong>Publisher</strong><span>${escapeHtml(venue.publisher)}</span></div><div class="snapshot-card"><strong>OA model</strong><span>${escapeHtml(venue.oa_model)}</span></div><div class="snapshot-card"><strong>Frequency</strong><span>${escapeHtml(venue.frequency)}</span></div><div class="snapshot-card"><strong>Review speed</strong><span>${escapeHtml(venue.review_speed)}</span></div><div class="snapshot-card"><strong>Latest issue</strong><span>${escapeHtml(venue.latest_issue)}</span></div><div class="snapshot-card"><strong>Latest publication</strong><span>${escapeHtml(formatDate(venue.latest_publication_date))}</span></div></div>`
     : `<div class="snapshot-grid"><div class="snapshot-card"><strong>Next deadline</strong><span>${escapeHtml(formatDate(venue.next_deadline))}</span></div><div class="snapshot-card"><strong>Notification</strong><span>${escapeHtml(formatDate(venue.notification_date))}</span></div><div class="snapshot-card"><strong>Event date</strong><span>${escapeHtml(formatDate(venue.event_date))}</span></div><div class="snapshot-card"><strong>Location</strong><span>${formatLocation(venue.location, venue.location_country)}</span></div><div class="snapshot-card"><strong>Review model</strong><span>${escapeHtml(venue.review_model)}</span></div><div class="snapshot-card"><strong>Acceptance</strong><span>${escapeHtml(venue.acceptance_rate)}</span></div></div>`;
-  areaFit.innerHTML = `<p><strong>Primary area:</strong> ${escapeHtml(venue.primary_area_slug)}</p><div>${tagList(venue.subareas || [])}</div><h4>Related venues</h4><div class="stack-sm">${relatedVenuesFor(venue, conferences, journals).map((item) => `<a class="detail-title-link" href="${venueDetailUrl(item)}">${escapeHtml(item.short_name)}</a>`).join("<br />")}</div>`;
+  areaFit.innerHTML = `<p><strong>Primary area:</strong> ${escapeHtml(venue.primary_area_slug)}</p><div>${tagList(venue.subareas || [])}</div>`;
+  if (related) {
+    related.innerHTML = relatedVenuesFor(venue, conferences, journals).map((item) => `<article class="related-venue-card stack-sm"><strong><a class="detail-title-link" href="${venueDetailUrl(item)}">${escapeHtml(item.short_name)}</a></strong><p class="muted">${escapeHtml(item.area)} · ${escapeHtml(item.tier)}</p></article>`).join("") || `<p class="muted">No related venues found.</p>`;
+  }
   sources.innerHTML = `${renderTrustChips(venue)}${renderSourceLinks(venue, 3)}<p class="muted">Primary source: ${escapeHtml(venue.source_primary || "official")}</p>`;
   if (type === "journal") {
     history.innerHTML = `<div class="history-list">${(venue.issue_log || []).map((log) => `<article class="history-item stack-sm"><strong>Vol. ${escapeHtml(log.volume)}${log.issue ? `, Issue ${escapeHtml(log.issue)}` : ""}</strong><p class="muted">${escapeHtml(formatDate(log.date))}</p><p>${escapeHtml(log.featured_articles?.[0]?.title || "Issue summary")}</p>${miniLink("Issue", log.issue_url, "📰")}</article>`).join("") || `<p class="muted">No issue history recorded yet.</p>`}</div>`;

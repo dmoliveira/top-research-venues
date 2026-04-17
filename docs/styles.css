@@ -540,6 +540,12 @@ tbody tr:first-child td { padding-top: 18px; }
   padding: 14px;
   background: color-mix(in srgb, var(--chip-strong) 40%, transparent);
 }
+.related-venue-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--panel-solid) 92%, transparent);
+}
 .history-list {
   display: grid;
   gap: 12px;
