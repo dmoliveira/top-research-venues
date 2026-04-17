@@ -452,17 +452,36 @@ function renderWatchlist(venues) {
   el.innerHTML = items.length ? items.map((item) => `<article class="venue-card stack-sm"><div class="inline-meta"><span class="badge">${escapeHtml(item.area)}</span><span class="badge">Saved</span></div><h3>${internalVenueLink(item)}</h3><p class="muted">${escapeHtml(item.notes || "")}</p><div class="actions">${miniLink("Open", venueDetailUrl(item), "🔍").replace('target="_blank" rel="noreferrer"','')}${miniLink("Site", item.website, "🌐")}</div></article>`).join("") : `<article class="update-item"><p class="muted">No saved venues yet. Use the Save button on conference and journal listings.</p></article>`;
 }
 
+function renderCompareStatus(targetId, type, rows) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const selected = compareItems(type).map((slug) => rows.find((item) => item.slug === slug)).filter(Boolean);
+  if (!selected.length) {
+    el.innerHTML = `<span class="compare-hint">Select up to 4 ${type === "conference" ? "conferences" : "journals"} to compare.</span>`;
+    return;
+  }
+  el.innerHTML = `<div class="inline-meta compare-status"><span class="summary-pill">Comparing ${selected.length} ${type === "conference" ? "conferences" : "journals"}</span><button class="tiny-button" data-clear-compare="${type}">Clear</button></div>`;
+  el.querySelector("[data-clear-compare]")?.addEventListener("click", () => {
+    const state = loadStored(COMPARE_KEY, { conference: [], journal: [] });
+    state[type] = [];
+    saveStored(COMPARE_KEY, state);
+    renderCompareStatus(targetId, type, rows);
+    renderCompareTray(type === "conference" ? "conference-compare" : "journal-compare", type, rows);
+  });
+}
+
 function renderCompareTray(targetId, type, rows) {
   const el = document.getElementById(targetId);
   if (!el) return;
   const selected = compareItems(type).map((slug) => rows.find((item) => item.slug === slug)).filter(Boolean);
-  el.innerHTML = selected.length ? `<div class="stack-sm"><div class="inline-meta"><span class="badge">Compare ${selected.length}/4</span></div><div class="compare-grid">${selected.map((item) => `<article class="compare-card stack-sm"><strong>${escapeHtml(item.short_name)}</strong><p class="muted">${escapeHtml(item.area)} · ${escapeHtml(item.tier)}</p><p class="muted">${type === "conference" ? `${formatDate(item.next_deadline)} · ${escapeHtml(item.acceptance_rate)}` : `${escapeHtml(item.latest_issue)} · ${escapeHtml(item.review_speed)}`}</p><div class="action-cluster"><button class="tiny-button" data-remove-compare="${escapeHtml(item.slug)}">Remove</button></div></article>`).join("")}</div></div>` : "";
+  el.innerHTML = selected.length ? `<div class="stack-sm"><div><div class="compare-title">Compare ${type === "conference" ? "conferences" : "journals"}</div><div class="compare-hint">You can compare up to 4 venues at once.</div></div><div class="compare-grid">${selected.map((item) => `<article class="compare-card stack-sm"><strong>${escapeHtml(item.short_name)}</strong><p class="muted">${escapeHtml(item.area)} · ${escapeHtml(item.tier)}</p><p class="muted">${type === "conference" ? `${formatDate(item.next_deadline)} · ${escapeHtml(item.acceptance_rate)}` : `${escapeHtml(item.latest_issue)} · ${escapeHtml(item.review_speed)}`}</p><div class="action-cluster"><button class="tiny-button" data-remove-compare="${escapeHtml(item.slug)}">Remove</button></div></article>`).join("")}</div></div>` : "";
   el.querySelectorAll("[data-remove-compare]").forEach((button) => {
     button.addEventListener("click", () => {
       const state = loadStored(COMPARE_KEY, { conference: [], journal: [] });
       state[type] = state[type].filter((slug) => slug !== button.dataset.removeCompare);
       saveStored(COMPARE_KEY, state);
       renderCompareTray(targetId, type, rows);
+      renderCompareStatus(type === "conference" ? "conference-compare-status" : "journal-compare-status", type, rows);
     });
   });
 }
@@ -494,6 +513,25 @@ function relatedVenuesFor(venue, conferences, journals) {
   return [...conferences, ...journals].filter((item) => item.slug !== venue.slug && item.primary_area_slug === venue.primary_area_slug).slice(0, 6);
 }
 
+function getVenueBestFor(venue) {
+  if (venue.type === "conference") {
+    if (venue.primary_area_slug === "machine-learning") return "Broad, high-visibility papers in fast-moving AI/ML areas.";
+    if (venue.primary_area_slug === "computer-vision") return "Strong visual learning, recognition, and multimodal vision work.";
+    if (venue.primary_area_slug === "nlp") return "Language-focused work with strong research community visibility.";
+    return "Researchers seeking recognized conference visibility in this area.";
+  }
+  if (venue.primary_area_slug === "machine-learning") return "Archival ML work, mature experiments, and methods papers.";
+  if (venue.primary_area_slug === "computer-vision") return "Longer-form vision and pattern analysis papers with archival depth.";
+  if (venue.primary_area_slug === "nlp") return "Archival NLP papers and deeper follow-up work after conference iterations.";
+  return "Archival publication with sustained visibility in this area.";
+}
+
+function getPrimaryAction(venue) {
+  return venue.type === "conference"
+    ? { label: "Open submission", url: venue.submission_url || venue.website, icon: "📝", note: "Best next action if you are preparing a submission." }
+    : { label: "Open author info", url: venue.submission_url || venue.website, icon: "✍️", note: "Best next action if you are evaluating journal submission requirements." };
+}
+
 function renderVenuePage(conferences, journals, cfps) {
   const hero = document.getElementById("venue-hero");
   if (!hero) return;
@@ -505,6 +543,8 @@ function renderVenuePage(conferences, journals, cfps) {
   const breadcrumb = document.getElementById("venue-breadcrumb");
   const actions = document.getElementById("venue-actions");
   const snapshot = document.getElementById("venue-snapshot");
+  const bestFor = document.getElementById("venue-best-for");
+  const primaryAction = document.getElementById("venue-primary-action");
   const areaFit = document.getElementById("venue-area-fit");
   const sources = document.getElementById("venue-sources");
   const history = document.getElementById("venue-history");
@@ -515,6 +555,11 @@ function renderVenuePage(conferences, journals, cfps) {
   document.title = `${venue.short_name} · Top Research Venues`;
   breadcrumb.innerHTML = `<a href="./index.html">Home</a> / <a href="./${type === "journal" ? "journals" : "conferences"}.html">${type === "journal" ? "Journals" : "Conferences"}</a> / ${escapeHtml(venue.short_name)}`;
   hero.innerHTML = `<p class="eyebrow">${type === "journal" ? "📚 Journal profile" : "🏛 Conference profile"}</p><h1>${escapeHtml(venue.short_name)}</h1><p class="muted">${escapeHtml(venue.name)}</p><div class="inline-meta"><span class="badge">${escapeHtml(venue.area)}</span><span class="badge">${escapeHtml(venue.tier)}</span>${type === "journal" ? `<span class="badge">${escapeHtml(venue.latest_issue || "Latest issue TBA")}</span>` : statusBadge(venue.status)}</div><p>${escapeHtml(venue.notes || "")}</p>${renderTrustChips(venue)}`;
+  if (bestFor) bestFor.innerHTML = `<div class="best-for-card stack-sm"><strong>Best for</strong><p class="muted">${escapeHtml(getVenueBestFor(venue))}</p></div>`;
+  if (primaryAction) {
+    const action = getPrimaryAction(venue);
+    primaryAction.innerHTML = `<div class="best-for-card stack-sm"><p class="muted">${escapeHtml(action.note)}</p>${miniLink(action.label, action.url, action.icon)}</div>`;
+  }
   actions.innerHTML = `${renderSourceLinks(venue, 3)}${miniLink(type === "journal" ? "Author info" : "Submit", venue.submission_url, type === "journal" ? "✍️" : "📝")}${type === "conference" ? miniLink("Proceedings", latestProceedings(venue), "📄") : miniLink("Latest issue", venue.issue_log?.[0]?.issue_url, "📰")}`;
   snapshot.innerHTML = type === "journal"
     ? `<div class="snapshot-grid"><div class="snapshot-card"><strong>Publisher</strong><span>${escapeHtml(venue.publisher)}</span></div><div class="snapshot-card"><strong>OA model</strong><span>${escapeHtml(venue.oa_model)}</span></div><div class="snapshot-card"><strong>Frequency</strong><span>${escapeHtml(venue.frequency)}</span></div><div class="snapshot-card"><strong>Review speed</strong><span>${escapeHtml(venue.review_speed)}</span></div><div class="snapshot-card"><strong>Latest issue</strong><span>${escapeHtml(venue.latest_issue)}</span></div><div class="snapshot-card"><strong>Latest publication</strong><span>${escapeHtml(formatDate(venue.latest_publication_date))}</span></div></div>`
@@ -770,6 +815,7 @@ function initConferencePage(conferences) {
       return log ? `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)} ${log.year}</h3><p class="muted">${formatLocation(log.location, log.location_country)}</p><p>${escapeHtml(log.acceptance_rate)} acceptance · ${log.papers_published ? `${log.papers_published} papers` : "paper count TBA"}</p><div>${tagList(log.highlights || [])}</div><div class="actions">${miniLink("Proceedings", log.proceedings_url, "📄")}</div></article>` : "";
     }).join("");
     if (trendGrid) trendGrid.innerHTML = rows.slice(0, 6).map(renderTrendCard).join("");
+    renderCompareStatus("conference-compare-status", "conference", conferences);
     renderCompareTray("conference-compare", "conference", conferences);
     renderPagination(pagerTop, page, rows.length, pageSize, (next) => { page = next; draw(); }, (size) => { pageSize = size; page = 1; draw(); });
     renderPagination(pagerBottom, page, rows.length, pageSize, (next) => { page = next; draw(); }, (size) => { pageSize = size; page = 1; draw(); });
@@ -787,6 +833,7 @@ function initConferencePage(conferences) {
         const state = loadStored(COMPARE_KEY, { conference: [], journal: [] });
         if (!state.conference.includes(button.dataset.compareVenue) && state.conference.length < 4) state.conference.push(button.dataset.compareVenue);
         saveStored(COMPARE_KEY, state);
+        renderCompareStatus("conference-compare-status", "conference", conferences);
         renderCompareTray("conference-compare", "conference", conferences);
       });
     });
@@ -856,6 +903,7 @@ function initJournalPage(journals) {
       const log = item.issue_log?.[0];
       return log ? `<article class="log-card stack-sm"><h3>${escapeHtml(item.short_name)}</h3><p class="muted">Vol. ${escapeHtml(log.volume)}${log.issue ? `, Issue ${escapeHtml(log.issue)}` : ""}</p><p>${formatDate(log.date)}</p><p class="muted">${escapeHtml(log.featured_articles?.[0]?.title || "")}</p><div class="actions">${miniLink("Issue", log.issue_url, "📰")}${miniLink("Article", log.featured_articles?.[0]?.url, "📄")}</div></article>` : "";
     }).join("");
+    renderCompareStatus("journal-compare-status", "journal", journals);
     renderCompareTray("journal-compare", "journal", journals);
     renderPagination(pagerTop, page, rows.length, pageSize, (next) => { page = next; draw(); }, (size) => { pageSize = size; page = 1; draw(); });
     renderPagination(pagerBottom, page, rows.length, pageSize, (next) => { page = next; draw(); }, (size) => { pageSize = size; page = 1; draw(); });
@@ -873,6 +921,7 @@ function initJournalPage(journals) {
         const state = loadStored(COMPARE_KEY, { conference: [], journal: [] });
         if (!state.journal.includes(button.dataset.compareVenue) && state.journal.length < 4) state.journal.push(button.dataset.compareVenue);
         saveStored(COMPARE_KEY, state);
+        renderCompareStatus("journal-compare-status", "journal", journals);
         renderCompareTray("journal-compare", "journal", journals);
       });
     });

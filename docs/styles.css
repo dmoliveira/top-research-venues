@@ -403,10 +403,19 @@ tbody tr:first-child td { padding-top: 18px; }
 .update-item p { margin: 0; }
 .compare-shell:empty,
 #watchlist-grid:empty { display: none; }
+.compare-status:empty { display: none; }
 .compare-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
+}
+.compare-title {
+  font-weight: 700;
+  font-size: .95rem;
+}
+.compare-hint {
+  color: var(--muted);
+  font-size: .86rem;
 }
 .compare-card {
   border: 1px solid var(--line);
@@ -453,6 +462,12 @@ tbody tr:first-child td { padding-top: 18px; }
 }
 .snapshot-card strong,
 .snapshot-card span { display: block; }
+.best-for-card {
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line));
+  border-radius: 14px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--chip-strong) 40%, transparent);
+}
 .history-list {
   display: grid;
   gap: 12px;
