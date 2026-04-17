@@ -451,7 +451,7 @@ function renderWatchlist(venues) {
   if (!el) return;
   const items = watchlistItems().map(({ slug, type }) => venues.get(slug)).filter(Boolean).slice(0, 6);
   if (countEl) countEl.textContent = items.length ? `⭐ ${items.length} saved venues` : "⭐ No saved venues yet";
-  el.innerHTML = items.length ? items.map((item) => `<article class="venue-card stack-sm"><div class="inline-meta"><span class="badge">${escapeHtml(item.area)}</span><span class="badge">Saved</span></div><h3>${internalVenueLink(item)}</h3><p class="muted">${escapeHtml(item.notes || "")}</p><div class="actions">${miniLink("Open", venueDetailUrl(item), "🔍").replace('target="_blank" rel="noreferrer"','')}${miniLink("Site", item.website, "🌐")}</div></article>`).join("") : `<article class="update-item"><p class="muted">No saved venues yet. Use the Save button on conference and journal listings.</p></article>`;
+  el.innerHTML = items.length ? items.map((item) => `<article class="venue-card stack-sm"><div class="inline-meta"><span class="badge">${escapeHtml(item.area)}</span><span class="badge">Saved</span></div><h3>${internalVenueLink(item)}</h3><p class="muted">${escapeHtml(item.notes || "")}</p><div class="actions">${miniLink("Open", venueDetailUrl(item), "🔍").replace('target="_blank" rel="noreferrer"','')}${miniLink("Site", item.website, "🌐")}</div></article>`).join("") : `<article class="update-item watchlist-empty"><p class="muted">No saved venues yet. Use the Save button on conference and journal listings.</p></article>`;
 }
 
 function renderCompareStatus(targetId, type, rows) {

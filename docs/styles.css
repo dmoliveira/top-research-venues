@@ -453,6 +453,9 @@ tbody tr:first-child td { padding-top: 18px; }
   gap: 10px;
   flex-wrap: wrap;
 }
+.compare-status .summary-pill {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
 .compare-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -465,6 +468,9 @@ tbody tr:first-child td { padding-top: 18px; }
 .compare-hint {
   color: var(--muted);
   font-size: .86rem;
+}
+.watchlist-empty {
+  border-style: dashed;
 }
 .compare-card {
   border: 1px solid var(--line);
