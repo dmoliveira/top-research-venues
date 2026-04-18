@@ -970,6 +970,7 @@ function initConferencePage(conferences) {
         area.value = "";
         status.value = "";
         tier.value = "";
+        savedOnly = false;
       } else {
         if (chip.dataset.area) area.value = area.value === chip.dataset.area ? "" : chip.dataset.area;
         if (chip.dataset.status) status.value = status.value === chip.dataset.status ? "" : chip.dataset.status;
@@ -1081,6 +1082,7 @@ function initJournalPage(journals) {
         oa.value = "";
         tier.value = "";
         sort.value = "name-asc";
+        savedOnly = false;
       } else {
         if (chip.dataset.area) area.value = area.value === chip.dataset.area ? "" : chip.dataset.area;
         if (chip.dataset.oa) oa.value = oa.value === chip.dataset.oa ? "" : chip.dataset.oa;
@@ -1120,6 +1122,7 @@ function initCfpPage(cfps, conferences, journals, areas) {
   let rangeDays = 0;
   let confirmedOnly = false;
   let quickType = "";
+  let savedOnly = false;
   const prefill = getPrefillQuery();
   const monthPrefill = queryParams().get("month") || "";
   if (prefill) search.value = prefill;
@@ -1135,6 +1138,7 @@ function initCfpPage(cfps, conferences, journals, areas) {
   renderCfpUrgencyBlocks(cfps, venues);
 
   function currentData() {
+    const saved = new Set(watchlistItems().map((item) => item.slug));
     return cfps
       .filter((item) => (
         (!monthPrefill || (item.deadline || "").startsWith(monthPrefill))
@@ -1143,6 +1147,7 @@ function initCfpPage(cfps, conferences, journals, areas) {
         && (!status.value || item.status === status.value)
         && (!confidence.value || item.confidence === confidence.value)
         && (!confirmedOnly || item.deadline_confidence === "confirmed")
+        && (!savedOnly || saved.has(item.venue_slug))
         && (!rangeDays || ((daysUntil(item.deadline) ?? 9999) >= 0 && (daysUntil(item.deadline) ?? 9999) <= rangeDays))
         && (!search.value || matchText(search.value, [
           item.track,
@@ -1204,11 +1209,14 @@ function initCfpPage(cfps, conferences, journals, areas) {
         confirmedOnly = !confirmedOnly;
       } else if (chip.dataset.type) {
         quickType = quickType === chip.dataset.type ? "" : chip.dataset.type;
+      } else if (chip.dataset.saved) {
+        savedOnly = !savedOnly;
       }
       quickChips.querySelectorAll(".filter-chip").forEach((button) => {
         const active = (!!button.dataset.range && Number(button.dataset.range) === rangeDays)
           || (!!button.dataset.confirmed && confirmedOnly)
-          || (!!button.dataset.type && quickType === button.dataset.type);
+          || (!!button.dataset.type && quickType === button.dataset.type)
+          || (!!button.dataset.saved && savedOnly);
         button.classList.toggle("is-active", active);
       });
       page = 1;
