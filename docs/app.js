@@ -417,6 +417,19 @@ function collectRecentlyVerified(conferences, journals, cfps, venues) {
   ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
 }
 
+function collectRecentlyAdded(conferences, journals) {
+  return [...conferences, ...journals]
+    .filter((item) => item.created_at)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 5)
+    .map((item) => ({
+      label: item.short_name,
+      reason: item.type === "conference" ? "New conference profile added" : "New journal profile added",
+      date: item.created_at,
+      href: venueDetailUrl(item)
+    }));
+}
+
 function getUpcomingTimelineBuckets(cfps, monthsAhead = 6) {
   const base = new Date(currentIsoDate());
   base.setDate(1);
@@ -826,6 +839,7 @@ function renderHomepageActivity(conferences, journals, cfps, venues) {
   renderUpdateList("updates-this-month", collectRecentUpdates(conferences, journals, cfps, venues), "No venue updates recorded this month yet.");
   renderUpdateList("updates-this-week", collectWeeklyUpdates(conferences, journals, cfps, venues), "No venue updates recorded this week yet.");
   renderUpdateList("recently-verified", collectRecentlyVerified(conferences, journals, cfps, venues), "No recent verification activity recorded yet.");
+  renderUpdateList("recently-added", collectRecentlyAdded(conferences, journals), "No newly added venues recorded yet.");
   renderDeadlineTimeline(cfps, venues);
   renderWatchlist(venues);
 }
@@ -1060,6 +1074,7 @@ function initCfpPage(cfps, conferences, journals, areas) {
   let confirmedOnly = false;
   let quickType = "";
   const prefill = getPrefillQuery();
+  const monthPrefill = queryParams().get("month") || "";
   if (prefill) search.value = prefill;
   area.innerHTML += areas.map((item) => `<option value="${item.slug}">${item.name}</option>`).join("");
   type.innerHTML += [...new Set(cfps.map((item) => item.venue_type))].map((value) => `<option value="${value}">${value}</option>`).join("");
@@ -1075,7 +1090,8 @@ function initCfpPage(cfps, conferences, journals, areas) {
   function currentData() {
     return cfps
       .filter((item) => (
-        (!area.value || item.area_slug === area.value)
+        (!monthPrefill || (item.deadline || "").startsWith(monthPrefill))
+        && (!area.value || item.area_slug === area.value)
         && (!(quickType || type.value) || item.venue_type === (quickType || type.value))
         && (!status.value || item.status === status.value)
         && (!confidence.value || item.confidence === confidence.value)
@@ -1096,7 +1112,7 @@ function initCfpPage(cfps, conferences, journals, areas) {
     const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
     page = Math.min(page, totalPages);
     const pagedRows = rows.slice((page - 1) * pageSize, page * pageSize);
-    count.textContent = `${rows.length} CFPs match the current filters`;
+    count.textContent = `${rows.length} CFPs match the current filters${monthPrefill ? ` · filtered to ${monthPrefill}` : ""}`;
     body.innerHTML = pagedRows.map((item) => {
       const venue = venues.get(item.venue_slug);
       return `<tr>
@@ -1116,6 +1132,18 @@ function initCfpPage(cfps, conferences, journals, areas) {
 
   [search, area, type, status, confidence].forEach((element) => element.addEventListener("input", () => { page = 1; draw(); }));
   [area, type, status, confidence].forEach((element) => element.addEventListener("change", () => { page = 1; draw(); }));
+  if (monthPrefill && quickChips) {
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "chip filter-chip is-active";
+    clear.textContent = `Month: ${monthPrefill}`;
+    clear.addEventListener("click", () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("month");
+      window.location.href = `${url.pathname.split("/").pop()}${url.search}`;
+    });
+    quickChips.prepend(clear);
+  }
   quickChips?.querySelectorAll(".filter-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       if (chip.dataset.reset) {
